@@ -1,40 +1,41 @@
-#[derive(Debug)]
-pub struct Grid {
-    grid: [[Option<u8>;9];9],
-}
+pub mod sudoku {
+    #[derive(Debug)]
+    pub struct Grid {
+        grid: [[Option<u8>;9];9],
+    }
 
-impl Grid {
-    const MAX_ROWS:usize = 9;
-    const MAX_COLS:usize = 9;
+    impl Grid {
+        const MAX_ROWS:usize = 9;
+        const MAX_COLS:usize = 9;
 
-    pub fn new() -> Self {
-        Self {
-            grid: [[None; Self::MAX_COLS]; Self::MAX_ROWS],
+        pub fn new() -> Self {
+            Self {
+                grid: [[None; Self::MAX_COLS]; Self::MAX_ROWS],
+            }
         }
-    }
 
-    pub fn cell(&self, x: usize, y: usize) -> &Option<u8> {
-        // @todo Range check here
-        &self.grid[x][y]
-    }
+        pub fn cell(&self, x: usize, y: usize) -> &Option<u8> {
+            // @todo Range check here
+            &self.grid[x][y]
+        }
 
-    pub fn row(&self, row_index: usize) -> &[Option<u8>] {
-        // @todo Range check here
-        &self.grid[row_index]
-    }
+        pub fn row(&self, row_index: usize) -> &[Option<u8>] {
+            // @todo Range check here
+            &self.grid[row_index]
+        }
 
-    // @todo Implement getters for columns and subgrids
+        // @todo Implement getters for columns and subgrids
 
-    pub fn set_cell(&mut self, x: usize, y: usize, value: u8) -> &mut Self {
-        // @todo Range check here
-        self.grid[x][y] = Some(value);
-        self
+        pub fn set_cell(&mut self, x: usize, y: usize, value: u8) -> &mut Self {
+            // @todo Range check here
+            self.grid[x][y] = Some(value);
+            self
+        }
     }
 }
 
 fn main() {
-    let mut grid = Grid::new();
-    let mut cell_val = String::new();
+    let mut grid = sudoku::Grid::new();
 
     grid.set_cell(0, 0, 1)
         .set_cell(1, 1, 2)
@@ -47,14 +48,20 @@ fn main() {
         .set_cell(8, 8, 9);
 
     for row in 0..9 {
+        print!("\t");
         for col in 0..9 {
             let raw_val = grid.cell(row, col);
             match raw_val {
-                Some(val) => cell_val = val.to_string(),
-                None => cell_val = "-".to_string(),
+                Some(val) => print!(" {} ", val.to_string()),
+                None => print!(" - "),
             }
-            print!(" {} ", cell_val);
+            if 2 == col % 3 && col < 8 {
+                print!("|");
+            }
         }
         println!();
+        if 2 == row % 3 && row < 8 {
+            println!("\t---------+---------+---------");
+        }
     }
 }
