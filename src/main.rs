@@ -1,7 +1,7 @@
-pub mod sudoku;
+use sudoku_rust::sudoku::Grid;
 
 fn main() {
-    let mut grid = sudoku::Grid::new();
+    let mut grid = Grid::new();
 
     grid.set_cell(0, 0, 1)
         .set_cell(1, 1, 2)
