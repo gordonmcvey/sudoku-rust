@@ -13,6 +13,12 @@ impl Grid {
         }
     }
 
+    pub fn from_array(array_grid: [[Option<u8>;9];9]) -> Self {
+        Self {
+            grid: array_grid,
+        }
+    }
+    
     pub fn cell(&self, x: usize, y: usize) -> &Option<u8> {
         // @todo Range check here
         &self.grid[x][y]
