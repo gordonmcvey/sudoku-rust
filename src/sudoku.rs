@@ -1,3 +1,9 @@
+// @todo Implement the game
+#[derive(Debug)]
+pub struct Game {
+    grid: Grid,
+}
+
 #[derive(Debug)]
 pub struct Grid {
     grid: [[Option<u8>;9];9],
@@ -18,7 +24,7 @@ impl Grid {
             grid: array_grid,
         }
     }
-    
+
     pub fn cell(&self, x: usize, y: usize) -> &Option<u8> {
         // @todo Range check here
         &self.grid[x][y]
@@ -36,4 +42,53 @@ impl Grid {
         self.grid[x][y] = Some(value);
         self
     }
+}
+
+#[derive(Debug)]
+pub struct Solver {
+    problem:Grid,
+    solution:Option<Grid>,
+}
+
+impl Solver {
+    pub fn new(problem:Grid) -> Self {
+        Self {
+            problem,
+            solution:None,
+        }
+    }
+
+    pub fn solve(&self) -> &Self {
+        self.find_solution(0, 0);
+        &self
+    }
+
+    pub fn get_solution(&self) -> &Option<Grid> {
+        &self.solution
+    }
+
+    fn find_solution(&self, row_id:usize, column_id:usize) -> bool {
+        if row_id > 8 {
+            // If we've passed the end of the grid then we've succeeded in finding a solution
+            return true;
+        } else if column_id > 8 {
+            // If we've passed the end of this row then move to the next one
+            return self.find_solution(row_id + 1, 0);
+        } else if self.problem.grid[row_id][column_id].is_some() {
+            // If this cell already has a value, move on to the next one
+            println!("[{}, {}] is already filled", row_id, column_id);
+            return self.find_solution(row_id, column_id + 1);
+        } else {
+            // @todo Find a valid solution for this cell
+            println!("[{}, {}] can be filled", row_id, column_id);
+            return self.find_solution(row_id, column_id + 1);
+        }
+
+        return false;
+    }
+}
+
+// @todo Implement option finder logic
+#[derive(Debug)]
+pub struct OptionFinder {
 }
