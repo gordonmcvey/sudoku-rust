@@ -6,7 +6,7 @@ pub struct Game {
 
 #[derive(Debug)]
 pub struct Grid {
-    grid: [[Option<u8>;9];9],
+    grid: Vec<Vec<Option<u8>>>,
 }
 
 impl Grid {
@@ -15,14 +15,18 @@ impl Grid {
 
     pub fn new() -> Self {
         Self {
-            grid: [[None; Self::MAX_COLS]; Self::MAX_ROWS],
+            //grid: [[None; Self::MAX_COLS]; Self::MAX_ROWS],
+            grid: vec![vec![None; Self::MAX_COLS]; Self::MAX_ROWS],
         }
     }
 
     pub fn from_array(array_grid: [[Option<u8>;9];9]) -> Self {
-        Self {
-            grid: array_grid,
+        let mut grid = Vec::new();
+        for row in array_grid.iter() {
+            grid.push(row.to_vec());
         }
+
+        Self { grid }
     }
 
     pub fn cell(&self, x: usize, y: usize) -> &Option<u8> {
@@ -35,7 +39,17 @@ impl Grid {
         &self.grid[row_index]
     }
 
-    // @todo Implement getters for columns and subgrids
+    pub fn col(&self, col_index: usize) -> Vec<Option<u8>> {
+
+        let mut a:Vec<Option<u8>> = Vec::new();
+
+        for row in self.grid.iter() {
+            a.push(row[col_index]);
+        }
+        a
+    }
+
+    // @todo Implement getters for subgrids
 
     pub fn set_cell(&mut self, x: usize, y: usize, value: u8) -> &mut Self {
         // @todo Range check here

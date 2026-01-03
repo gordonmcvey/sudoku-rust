@@ -18,14 +18,14 @@ fn main() {
 
     let grid = Grid::from_array([
         [Some(1), None, None, None, None, None, None, None, None],
-        [None, Some(2), None, None, None, None, None, None, None],
-        [None, None, Some(3), None, None, None, None, None, None],
-        [None, None, None, Some(4), None, None, None, None, None],
-        [None, None, None, None, Some(5), None, None, None, None],
-        [None, None, None, None, None, Some(6), None, None, None],
-        [None, None, None, None, None, None, Some(7), None, None],
-        [None, None, None, None, None, None, None, Some(8), None],
-        [None, None, None, None, None, None, None, None, Some(9)],
+        [Some(1), Some(2), None, None, None, None, None, None, None],
+        [Some(1), Some(2), Some(3), None, None, None, None, None, None],
+        [Some(1), Some(2), Some(3), Some(4), None, None, None, None, None],
+        [Some(1), Some(2), Some(3), None, Some(5), None, None, None, None],
+        [Some(1), Some(2), Some(3), None, None, Some(6), None, None, None],
+        [Some(1), Some(2), Some(3), None, None, None, Some(7), None, None],
+        [Some(1), Some(2), Some(3), None, None, None, None, Some(8), None],
+        [Some(1), Some(2), Some(3), None, None, None, None, None, Some(9)],
     ]);
 
     for row in 0..9 {
@@ -45,6 +45,9 @@ fn main() {
             println!("\t---------+---------+---------");
         }
     }
+
+    println!("{:?}", grid.row(3));
+    println!("{:?}", grid.col(3));
 
     let solver = Solver::new(grid);
     solver.solve();
