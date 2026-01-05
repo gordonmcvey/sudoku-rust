@@ -6,7 +6,7 @@ pub struct Game {
 
 #[derive(Debug)]
 pub struct Grid {
-    pub grid: [Option<u8>; Grid::MAX_ROWS * Grid::MAX_COLS],
+    grid: Vec<Option<u8>>,
 }
 
 impl Grid {
@@ -15,19 +15,15 @@ impl Grid {
 
     pub fn new() -> Self {
         Self {
-            grid: [None; Self::MAX_COLS * Self::MAX_COLS],
+            grid: vec![None; Self::MAX_COLS * Self::MAX_COLS],
         }
     }
 
     pub fn from_array(array_grid: [[Option<u8>;9];9]) -> Self {
-        let mut grid = [None; Self::MAX_COLS * Self::MAX_COLS];
-        let mut i = 0;
+        let mut grid = Vec::with_capacity(Self::MAX_COLS * Self::MAX_COLS);
 
         for row in array_grid.iter() {
-            for cell in row.iter() {
-                grid[i] = *cell;
-                i += 1;
-            }
+            grid.extend_from_slice(row);
         }
 
         Self { grid }
