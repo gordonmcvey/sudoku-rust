@@ -54,44 +54,47 @@ fn main() {
         }
     }
 
-    println!("{:?}", grid.row(0));
+    // println!("{:?}", grid.row(0));
     println!("{:?}", grid.row(1));
-    println!("{:?}", grid.row(2));
-    println!("{:?}", grid.row(3));
+    // println!("{:?}", grid.row(2));
+    // println!("{:?}", grid.row(3));
     println!("{:?}", grid.row(4));
-    println!("{:?}", grid.row(5));
-    println!("{:?}", grid.row(6));
+    // println!("{:?}", grid.row(5));
+    // println!("{:?}", grid.row(6));
     println!("{:?}", grid.row(7));
-    println!("{:?}", grid.row(8));
+    // println!("{:?}", grid.row(8));
     println!();
 
-    println!("{:?}", grid.col(0));
+    // println!("{:?}", grid.col(0));
     println!("{:?}", grid.col(1));
-    println!("{:?}", grid.col(2));
-    println!("{:?}", grid.col(3));
+    // println!("{:?}", grid.col(2));
+    // println!("{:?}", grid.col(3));
     println!("{:?}", grid.col(4));
-    println!("{:?}", grid.col(5));
-    println!("{:?}", grid.col(6));
+    // println!("{:?}", grid.col(5));
+    // println!("{:?}", grid.col(6));
     println!("{:?}", grid.col(7));
-    println!("{:?}", grid.col(8));
-    println!("{:?}", grid.col(9));
+    // println!("{:?}", grid.col(8));
     println!();
 
-    println!("{:?}", grid.subgrid(0));
+    // println!("{:?}", grid.subgrid(0));
     println!("{:?}", grid.subgrid(1));
-    println!("{:?}", grid.subgrid(2));
-    println!("{:?}", grid.subgrid(3));
+    // println!("{:?}", grid.subgrid(2));
+    // println!("{:?}", grid.subgrid(3));
     println!("{:?}", grid.subgrid(4));
+    // println!("{:?}", grid.subgrid(5));
+    // println!("{:?}", grid.subgrid(6));
+    println!("{:?}", grid.subgrid(7));
+    // println!("{:?}", grid.subgrid(8));
     println!();
 
     println!("{:?}", grid.subgrid_at(0, 1));
-    println!("{:?}", grid.subgrid_at(1, 4));
-    println!("{:?}", grid.subgrid_at(2, 7));
-    println!("{:?}", grid.subgrid_at(3, 1));
+    // println!("{:?}", grid.subgrid_at(1, 4));
+    // println!("{:?}", grid.subgrid_at(2, 7));
+    // println!("{:?}", grid.subgrid_at(3, 1));
     println!("{:?}", grid.subgrid_at(4, 4));
-    println!("{:?}", grid.subgrid_at(5, 7));
-    println!("{:?}", grid.subgrid_at(6, 1));
-    println!("{:?}", grid.subgrid_at(7, 4));
+    // println!("{:?}", grid.subgrid_at(5, 7));
+    // println!("{:?}", grid.subgrid_at(6, 1));
+    // println!("{:?}", grid.subgrid_at(7, 4));
     println!("{:?}", grid.subgrid_at(8, 7));
     println!();
 
