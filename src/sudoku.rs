@@ -92,6 +92,12 @@ impl Grid {
         subgrid
     }
 
+    pub fn subgrid_at(&self, row_id: usize, col_id: usize) -> Vec<Option<u8>> {
+        let subgrid_id = ((row_id / 3) * 3) + (col_id / 3);
+        // println!("calculated subgrid ID for {}, {} is: {}", row_id, col_id, subgrid_id);
+        self.subgrid(subgrid_id)
+    }
+
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> &mut Self {
         // @todo Range check here
         self.grid[row_id * Self::MAX_ROWS + col_id] = Some(value);

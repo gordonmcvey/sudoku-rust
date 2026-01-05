@@ -84,6 +84,17 @@ fn main() {
     println!("{:?}", grid.subgrid(4));
     println!();
 
+    println!("{:?}", grid.subgrid_at(0, 1));
+    println!("{:?}", grid.subgrid_at(1, 4));
+    println!("{:?}", grid.subgrid_at(2, 7));
+    println!("{:?}", grid.subgrid_at(3, 1));
+    println!("{:?}", grid.subgrid_at(4, 4));
+    println!("{:?}", grid.subgrid_at(5, 7));
+    println!("{:?}", grid.subgrid_at(6, 1));
+    println!("{:?}", grid.subgrid_at(7, 4));
+    println!("{:?}", grid.subgrid_at(8, 7));
+    println!();
+
     let solver = Solver::new(grid);
     solver.solve();
 }
