@@ -107,15 +107,15 @@ impl Grid {
 
 #[derive(Debug)]
 pub struct Solver {
-    problem:Grid,
-    solution:Option<Grid>,
+    problem: Grid,
+    solution: Option<Grid>,
 }
 
 impl Solver {
-    pub fn new(problem:Grid) -> Self {
+    pub fn new(problem: Grid) -> Self {
         Self {
             problem,
-            solution:None,
+            solution: None,
         }
     }
 
@@ -141,7 +141,10 @@ impl Solver {
             return self.find_solution(row_id, column_id + 1);
         } else {
             // @todo Find a valid solution for this cell
-            println!("[{}, {}] can be filled", row_id, column_id);
+            let options = OptionFinder::find_for_cell(&self.problem, row_id, column_id);
+
+            println!("Options for [{}, {}]: {:?}", row_id, column_id, options);
+
             return self.find_solution(row_id, column_id + 1);
         }
 
@@ -152,4 +155,48 @@ impl Solver {
 // @todo Implement option finder logic
 #[derive(Debug)]
 pub struct OptionFinder {
+}
+
+impl OptionFinder {
+
+    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Vec<u8> {
+        let mut options = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+        if grid.cell(row_id, column_id).is_none() {
+            // This replicates the array_diff option finding logic from the PHP version.
+            // But it's really messy and needs cleaning up!
+            for value in grid.row(row_id).iter() {
+                if value.is_some() {
+                    let found = options.iter().position(|pos| *pos == value.unwrap());
+                    if found.is_some() {
+                        options.remove(found.unwrap());
+                    }
+                }
+            }
+
+            for value in grid.col(column_id).iter() {
+                if value.is_some() {
+                    let found = options.iter().position(|pos| *pos == value.unwrap());
+                    if found.is_some() {
+                        options.remove(found.unwrap());
+                    }
+                }
+            }
+
+            for value in grid.subgrid_at(row_id, column_id).iter() {
+                if value.is_some() {
+                    let found = options.iter().position(|pos| *pos == value.unwrap());
+                    if found.is_some() {
+                        options.remove(found.unwrap());
+                    }
+                }
+            }
+
+        } else {
+            // If this cell already has a value then it can't have a solution
+            options.clear();
+        }
+
+        options
+    }
 }
