@@ -98,6 +98,42 @@ impl Grid {
         self.subgrid(subgrid_id)
     }
 
+    pub fn row_values(&self, row_id: usize) -> Vec<u8> {
+        let row: &[Option<u8>] = self.row(row_id);
+
+        // Is it safe to use unwrap() here?
+        row.iter()
+            .filter(|row| row.is_some())
+            .map(|row| row.unwrap())
+            .collect()
+    }
+
+    pub fn col_values(&self, column_id: usize) -> Vec<u8> {
+        let col: Vec<&Option<u8>> = self.col(column_id);
+
+        // Is it safe to use unwrap here?
+        col.iter()
+            .filter(|row| row.is_some())
+            .map(|row| row.unwrap())
+            .collect()
+    }
+
+    pub fn subgrid_values(&self, subgrid_id: usize) -> Vec<u8> {
+        let subgrid: Vec<Option<u8>> = self.subgrid(subgrid_id);
+
+        // Is it safe to use unwrap here?
+        subgrid.iter()
+            .filter(|row| row.is_some())
+            .map(|row| row.unwrap())
+            .collect()
+    }
+
+    pub fn subgrid_values_at(&self, row_id: usize, col_id: usize) -> Vec<u8> {
+        let subgrid_id = ((row_id / 3) * 3) + (col_id / 3);
+
+        self.subgrid_values(subgrid_id)
+    }
+
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> &mut Self {
         // @todo Range check here
         self.grid[row_id * Self::MAX_ROWS + col_id] = Some(value);
@@ -106,13 +142,13 @@ impl Grid {
 }
 
 #[derive(Debug)]
-pub struct Solver {
-    problem: Grid,
+pub struct Solver<'problem> {
+    problem: &'problem Grid,
     solution: Option<Grid>,
 }
 
-impl Solver {
-    pub fn new(problem: Grid) -> Self {
+impl<'problem> Solver<'problem> {
+    pub fn new(problem: &'problem Grid) -> Self {
         Self {
             problem,
             solution: None,
@@ -160,43 +196,34 @@ pub struct OptionFinder {
 impl OptionFinder {
 
     pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Vec<u8> {
+        // Early out: If this cell already has a value then it can't have any options
+        if grid.cell(row_id, column_id).is_some() {
+            return Vec::new();
+        }
+
         let mut options = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let used_vals = Self::build_used_list(&grid, row_id, column_id);
 
-        if grid.cell(row_id, column_id).is_none() {
-            // This replicates the array_diff option finding logic from the PHP version.
-            // But it's really messy and needs cleaning up!
-            for value in grid.row(row_id).iter() {
-                if value.is_some() {
-                    let found = options.iter().position(|pos| *pos == value.unwrap());
-                    if found.is_some() {
-                        options.remove(found.unwrap());
-                    }
-                }
+        // println!("{:?}", filtered);
+
+        for value in used_vals.iter() {
+            let found: Option<usize> = options.iter().position(|pos| pos == value);
+            if let Some(index) = found {
+                options.remove(index);
             }
-
-            for value in grid.col(column_id).iter() {
-                if value.is_some() {
-                    let found = options.iter().position(|pos| *pos == value.unwrap());
-                    if found.is_some() {
-                        options.remove(found.unwrap());
-                    }
-                }
-            }
-
-            for value in grid.subgrid_at(row_id, column_id).iter() {
-                if value.is_some() {
-                    let found = options.iter().position(|pos| *pos == value.unwrap());
-                    if found.is_some() {
-                        options.remove(found.unwrap());
-                    }
-                }
-            }
-
-        } else {
-            // If this cell already has a value then it can't have a solution
-            options.clear();
         }
 
         options
+    }
+
+    fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Vec<u8> {
+        let mut used_values: Vec<u8> = grid.row_values(row_id);
+        used_values.extend(grid.col_values(column_id));
+        used_values.extend(grid.subgrid_values_at(row_id, column_id));
+
+        used_values.sort();
+        used_values.dedup();
+
+        used_values
     }
 }
