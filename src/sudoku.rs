@@ -146,13 +146,15 @@ impl Grid {
 pub struct Solver<'problem> {
     problem: &'problem Grid,
     solution: Option<Grid>,
+    finder: OptionFinder<'problem>,
 }
 
 impl<'problem> Solver<'problem> {
-    pub fn new(problem: &'problem Grid) -> Self {
+    pub fn new(problem: &'problem Grid, finder: OptionFinder<'problem>) -> Self {
         Self {
             problem,
             solution: None,
+            finder,
         }
     }
 
@@ -178,7 +180,7 @@ impl<'problem> Solver<'problem> {
             return self.find_solution(row_id, column_id + 1);
         } else {
             // @todo Find a valid solution for this cell
-            let options = OptionFinder::find_for_cell(&self.problem, row_id, column_id);
+            let options = self.finder.find_for_cell(row_id, column_id);
 
             println!("Options for [{}, {}]: {:?}", row_id, column_id, options);
 
@@ -191,19 +193,23 @@ impl<'problem> Solver<'problem> {
 
 // @todo Implement option finder logic
 #[derive(Debug)]
-pub struct OptionFinder {
+pub struct OptionFinder<'this_grid> {
+    grid: &'this_grid Grid,
 }
 
-impl OptionFinder {
+impl <'this_grid>OptionFinder<'this_grid> {
+    pub fn new(grid: &'this_grid Grid) -> Self {
+        Self { grid }
+    }
 
-    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Vec<u8> {
+    pub fn find_for_cell(&self, row_id: usize, column_id: usize) -> Vec<u8> {
         // Early out: If this cell already has a value then it can't have any options
-        if grid.cell(row_id, column_id).is_some() {
+        if self.grid.cell(row_id, column_id).is_some() {
             return Vec::new();
         }
 
         let mut options = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let used_vals = Self::build_used_list(&grid, row_id, column_id);
+        let used_vals = Self::build_used_list(self.grid, row_id, column_id);
 
         // println!("{:?}", filtered);
 

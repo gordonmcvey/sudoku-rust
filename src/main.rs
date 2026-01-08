@@ -82,7 +82,7 @@ fn main() {
     // println!("{:?}", grid.subgrid_at(8, 7));
     // println!();
 
-    let solver = Solver::new(&grid);
+    let solver = Solver::new(&grid, OptionFinder::new(&grid));
     solver.solve();
 
     // println!("{:?}", OptionFinder::find_for_cell(&grid, 0,0));;
