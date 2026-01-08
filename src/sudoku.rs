@@ -79,15 +79,16 @@ impl Grid {
         let subgrid_index = subgrid_col + subgrid_row;
 
         // println!("Row: {}, Col: {}, Index: {}", subgrid_row, subgrid_col, subgrid_index);
-
         // println!("subgrid row 1 {:?}:", &self.grid[subgrid_index .. subgrid_index + 3]);
-        // println!("subgrid row 1 {:?}:", &self.grid[subgrid_index + 9 .. subgrid_index + 3 + 9]);
-        // println!("subgrid row 1 {:?}:", &self.grid[subgrid_index + 18 .. subgrid_index + 3 + 18]);
+        // println!("subgrid row 2 {:?}:", &self.grid[subgrid_index + 9 .. subgrid_index + 3 + 9]);
+        // println!("subgrid row 3 {:?}:", &self.grid[subgrid_index + 18 .. subgrid_index + 3 + 18]);
 
         let mut subgrid:Vec<Option<u8>> = Vec::new();
-        subgrid.extend_from_slice(&self.grid[subgrid_index .. subgrid_index + 3]);
-        subgrid.extend_from_slice(&self.grid[subgrid_index + 9 .. subgrid_index + 3 + 9]);
-        subgrid.extend_from_slice(&self.grid[subgrid_index + 18 .. subgrid_index + 3 + 18]);
+        for row_start in 0 .. 3 {
+            subgrid.extend_from_slice(&self.grid[subgrid_index + (9 * row_start) .. subgrid_index + 3 + (9 * row_start)]);
+        }
+
+        // println!("return subgrid values: {:?}:", subgrid);
 
         subgrid
     }
