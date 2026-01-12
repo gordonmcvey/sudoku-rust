@@ -38,9 +38,9 @@ fn print_grid(grid: &Grid, base: Option<&Grid>) {
             match raw_val {
                 Some(val) => {
                     if base.is_some() && base.unwrap().cell(row, col) != raw_val {
-                        print!(" {}", val.to_string().green())
+                        print!(" {}", val.to_string().bright_green())
                     } else {
-                        print!(" {}", val.to_string())
+                        print!(" {}", val.to_string().white())
                     }
                 },
                 None => print!(" -"),
