@@ -237,11 +237,8 @@ impl<'problem> Solver<'problem> {
         } else {
             // @todo Find a valid solution for this cell
             let options = OptionFinder::find_for_cell(solution, row_id, column_id);
-            if options.is_empty() {
-                return false;
-            }
-
             // println!("Options for [{}, {}]: {:?}", row_id, column_id, options);
+
             for option in options {
                 solution.set_cell(row_id, column_id, option);
                 if self.find_solution(solution, row_id, column_id + 1) {
@@ -251,7 +248,6 @@ impl<'problem> Solver<'problem> {
                 }
             }
 
-            // return self.find_solution(solution, row_id, column_id + 1);
             false
         }
     }
