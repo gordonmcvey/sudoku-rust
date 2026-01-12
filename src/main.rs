@@ -2,7 +2,7 @@ use sudoku_rust::sudoku::{Grid, OptionFinder, Solver};
 
 fn main() {
     // Puzzle from https://en.wikipedia.org/wiki/Sudoku
-    let grid = Grid::from_array([
+    let mut grid = Grid::from_array([
         [Some(5), Some(3), None, None, Some(7), None, None, None, None],
         [Some(6), None, None, Some(1), Some(9), Some(5), None, None, None],
         [None, Some(9), Some(8), None, None, None, None, Some(6), None],
@@ -20,23 +20,8 @@ fn main() {
     //     println!("{:#?}", a);
     // }
 
-    for row in 0..9 {
-        print!("\t");
-        for col in 0..9 {
-            let raw_val = grid.cell(row, col);
-            match raw_val {
-                Some(val) => print!(" {} ", val.to_string()),
-                None => print!(" - "),
-            }
-            if 2 == col % 3 && col < 8 {
-                print!("|");
-            }
-        }
-        println!();
-        if 2 == row % 3 && row < 8 {
-            println!("\t---------+---------+---------");
-        }
-    }
+    print_grid(&grid);
+    println!();
 
     // println!("{:?}", grid.row(0));
     // println!("{:?}", grid.row(1));
@@ -84,7 +69,28 @@ fn main() {
 
     let solver = Solver::new(&grid, OptionFinder::new(&grid));
     solver.solve();
+    print_grid(&grid);
 
     // println!("{:?}", OptionFinder::find_for_cell(&grid, 0,0));;
     // println!("{:?}", OptionFinder::find_for_cell(&grid, 0,2));;
+}
+
+fn print_grid(grid: &Grid) {
+    for row in 0..9 {
+        print!("\t");
+        for col in 0..9 {
+            let raw_val = grid.cell(row, col);
+            match raw_val {
+                Some(val) => print!(" {} ", val.to_string()),
+                None => print!(" - "),
+            }
+            if 2 == col % 3 && col < 8 {
+                print!("|");
+            }
+        }
+        println!();
+        if 2 == row % 3 && row < 8 {
+            println!("\t---------+---------+---------");
+        }
+    }
 }
