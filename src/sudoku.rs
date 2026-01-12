@@ -12,6 +12,8 @@ pub struct Grid {
 impl Grid {
     const GRID_WIDTH: usize = 9;
     const GRID_HEIGHT: usize = 9;
+    const SUBGRID_WIDTH: usize = 3;
+    const SUBGRID_HEIGHT: usize = 3;
 
     pub fn new() -> Self {
         Self {
@@ -74,8 +76,10 @@ impl Grid {
          * [0, 1, 2, 9, 10, 11, 18, 19, 20], subgrid 4 would consist of the elements
          * [30, 31, 32, 39, 40, 41, 48, 49, 50], and so on)
          */
-        let subgrid_col = subgrid_id * 3 % 9;
-        let subgrid_row = ((subgrid_id * 9) / 27) * 27;
+        let subgrid_col = subgrid_id * Self::SUBGRID_WIDTH % Self::GRID_WIDTH;
+        let subgrid_row = (
+            (subgrid_id * Self::GRID_HEIGHT) / (Self::GRID_HEIGHT * Self::SUBGRID_HEIGHT)
+        ) * (Self::GRID_HEIGHT * Self::SUBGRID_HEIGHT);
         let subgrid_index = subgrid_col + subgrid_row;
 
         // println!("Row: {}, Col: {}, Index: {}", subgrid_row, subgrid_col, subgrid_index);
@@ -94,9 +98,7 @@ impl Grid {
     }
 
     pub fn subgrid_at(&self, row_id: usize, col_id: usize) -> Vec<Option<u8>> {
-        let subgrid_id = ((row_id / 3) * 3) + (col_id / 3);
-        // println!("calculated subgrid ID for {}, {} is: {}", row_id, col_id, subgrid_id);
-        self.subgrid(subgrid_id)
+        self.subgrid(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
     pub fn row_values(&self, row_id: usize) -> Vec<u8> {
@@ -130,9 +132,7 @@ impl Grid {
     }
 
     pub fn subgrid_values_at(&self, row_id: usize, col_id: usize) -> Vec<u8> {
-        let subgrid_id = ((row_id / 3) * 3) + (col_id / 3);
-
-        self.subgrid_values(subgrid_id)
+        self.subgrid_values(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> &mut Self {
@@ -145,6 +145,27 @@ impl Grid {
         // @todo Range check here
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = None;
         self
+    }
+
+
+
+    fn coordinates_to_subgrid(row_id: usize, col_id: usize) -> usize {
+        let subgrid_id = ((row_id / Self::SUBGRID_HEIGHT) * Self::SUBGRID_HEIGHT) + (col_id / Self::SUBGRID_WIDTH);
+        // println!("calculated subgrid ID for {}, {} is: {}", row_id, col_id, subgrid_id);
+
+        subgrid_id
+    }
+
+    fn values_are_unique(values: &mut [u8]) -> bool {
+        values.sort();
+
+        for index in 0 .. values.len() - 1 {
+            if values[index] == values[index + 1] {
+                return false;
+            }
+        }
+
+        true
     }
 }
 
