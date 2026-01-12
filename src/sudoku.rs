@@ -10,17 +10,17 @@ pub struct Grid {
 }
 
 impl Grid {
-    const MAX_ROWS:usize = 9;
-    const MAX_COLS:usize = 9;
+    const GRID_WIDTH: usize = 9;
+    const GRID_HEIGHT: usize = 9;
 
     pub fn new() -> Self {
         Self {
-            grid: vec![None; Self::MAX_COLS * Self::MAX_COLS],
+            grid: vec![None; Self::GRID_WIDTH * Self::GRID_WIDTH],
         }
     }
 
-    pub fn from_array(array_grid: [[Option<u8>;9];9]) -> Self {
-        let mut grid = Vec::with_capacity(Self::MAX_COLS * Self::MAX_COLS);
+    pub fn from_array(array_grid: [[Option<u8>;Self::GRID_WIDTH];Self::GRID_HEIGHT]) -> Self {
+        let mut grid = Vec::with_capacity(Self::GRID_WIDTH * Self::GRID_WIDTH);
 
         for row in array_grid.iter() {
             grid.extend_from_slice(row);
@@ -31,12 +31,12 @@ impl Grid {
 
     pub fn cell(&self, row_id: usize, col_id: usize) -> &Option<u8> {
         // @todo Range check here
-        &self.grid[row_id * Self::MAX_ROWS + col_id]
+        &self.grid[row_id * Self::GRID_HEIGHT + col_id]
     }
 
     pub fn row(&self, row_id: usize) -> &[Option<u8>] {
         // @todo Range check here
-        &self.grid[row_id * Self::MAX_ROWS..(row_id + 1) * Self::MAX_ROWS]
+        &self.grid[row_id * Self::GRID_HEIGHT..(row_id + 1) * Self::GRID_HEIGHT]
     }
 
     // @todo This is probably not the preferred way to extrapolate the columns and it returns a Vec
@@ -53,7 +53,7 @@ impl Grid {
         self.grid
             .iter()
             .skip(col_id)
-            .step_by(Self::MAX_COLS)
+            .step_by(Self::GRID_WIDTH)
             .collect::<Vec<&Option<u8>>>()
     }
 
@@ -137,13 +137,13 @@ impl Grid {
 
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> &mut Self {
         // @todo Range check here
-        self.grid[row_id * Self::MAX_ROWS + col_id] = Some(value);
+        self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
         self
     }
 
     pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> &mut Self {
         // @todo Range check here
-        self.grid[row_id * Self::MAX_ROWS + col_id] = None;
+        self.grid[row_id * Self::GRID_HEIGHT + col_id] = None;
         self
     }
 }
