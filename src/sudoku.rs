@@ -140,6 +140,12 @@ impl Grid {
         self.grid[row_id * Self::MAX_ROWS + col_id] = Some(value);
         self
     }
+
+    pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> &mut Self {
+        // @todo Range check here
+        self.grid[row_id * Self::MAX_ROWS + col_id] = None;
+        self
+    }
 }
 
 #[derive(Debug)]
