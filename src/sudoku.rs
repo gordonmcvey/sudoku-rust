@@ -138,6 +138,13 @@ impl Grid {
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> &mut Self {
         // @todo Range check here
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
+        if self.row_is_unique(row_id)
+            && !self.col_is_unique(col_id)
+            && !self.subgrid_is_unique_at(row_id, col_id)
+        {
+            self.clear_cell(row_id, col_id);
+        }
+
         self
     }
 
@@ -147,7 +154,21 @@ impl Grid {
         self
     }
 
+    fn row_is_unique(&self, row_id: usize) -> bool {
+        Self::values_are_unique(&mut self.row_values(row_id))
+    }
 
+    fn col_is_unique(&self, col_id: usize) -> bool {
+        Self::values_are_unique(&mut self.col_values(col_id))
+    }
+
+    fn subgrid_is_unique(&self, subgrid_id: usize) -> bool {
+        Self::values_are_unique(&mut self.subgrid_values(subgrid_id))
+    }
+
+    fn subgrid_is_unique_at(&self, row_id: usize, col_id: usize) -> bool {
+        Self::values_are_unique(&mut self.subgrid_values_at(row_id, col_id))
+    }
 
     fn coordinates_to_subgrid(row_id: usize, col_id: usize) -> usize {
         let subgrid_id = ((row_id / Self::SUBGRID_HEIGHT) * Self::SUBGRID_HEIGHT) + (col_id / Self::SUBGRID_WIDTH);
