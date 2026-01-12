@@ -1,4 +1,5 @@
-use sudoku_rust::sudoku::{Grid, OptionFinder, Solver};
+use sudoku_rust::sudoku::{Grid, Solver};
+use colored::Colorize;
 
 fn main() {
     // Puzzle from https://en.wikipedia.org/wiki/Sudoku
@@ -16,28 +17,35 @@ fn main() {
         [None, None, None, None, Some(8), None, None, Some(7), Some(9)],
     ]);
 
-    print_grid(&grid);
+    print_grid(&grid, None);
     println!();
 
     let mut solver = Solver::new(&grid);
     let solution = solver.solve().get_solution();
 
     if let Some(solution) = solution {
-        print_grid(&solution);
+        print_grid(&solution, Some(&grid));
     } else {
         println!("No solution found");
     }
 }
 
-fn print_grid(grid: &Grid) {
+fn print_grid(grid: &Grid, base: Option<&Grid>) {
     for row in 0..9 {
         print!("\t");
         for col in 0..9 {
             let raw_val = grid.cell(row, col);
             match raw_val {
-                Some(val) => print!(" {}", val.to_string()),
+                Some(val) => {
+                    if base.is_some() && base.unwrap().cell(row, col) != raw_val {
+                        print!(" {}", val.to_string().green())
+                    } else {
+                        print!(" {}", val.to_string())
+                    }
+                },
                 None => print!(" -"),
             }
+
             if 2 == col % 3 && col < 8 {
                 print!(" |");
             }
