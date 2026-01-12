@@ -172,10 +172,7 @@ impl Grid {
     }
 
     fn coordinates_to_subgrid(row_id: usize, col_id: usize) -> usize {
-        let subgrid_id = ((row_id / Self::SUBGRID_HEIGHT) * Self::SUBGRID_HEIGHT) + (col_id / Self::SUBGRID_WIDTH);
-        // println!("calculated subgrid ID for {}, {} is: {}", row_id, col_id, subgrid_id);
-
-        subgrid_id
+        ((row_id / Self::SUBGRID_HEIGHT) * Self::SUBGRID_HEIGHT) + (col_id / Self::SUBGRID_WIDTH)
     }
 
     fn values_are_unique(values: &mut [u8]) -> bool {
@@ -226,14 +223,14 @@ impl<'problem> Solver<'problem> {
     fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> bool {
         if row_id > 8 {
             // If we've passed the end of the grid then we've succeeded in finding a solution
-            return true;
+            true
         } else if column_id > 8 {
             // If we've passed the end of this row then move to the next one
-            return self.find_solution(solution, row_id + 1, 0);
+            self.find_solution(solution, row_id + 1, 0)
         } else if solution.cell(row_id, column_id).is_some() {
             // If this cell already has a value, move on to the next one
             // println!("[{}, {}] is already filled", row_id, column_id);
-            return self.find_solution(solution, row_id, column_id + 1);
+            self.find_solution(solution, row_id, column_id + 1)
         } else {
             // @todo Find a valid solution for this cell
             let options = OptionFinder::find_for_cell(solution, row_id, column_id);
@@ -242,7 +239,7 @@ impl<'problem> Solver<'problem> {
             for option in options {
                 solution.set_cell(row_id, column_id, option);
                 if self.find_solution(solution, row_id, column_id + 1) {
-                    return true;
+                    return true
                 } else {
                     solution.clear_cell(row_id, column_id);
                 }
