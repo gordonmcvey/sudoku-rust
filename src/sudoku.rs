@@ -5,6 +5,7 @@ pub struct Game {
 }
 
 #[derive(Debug)]
+#[derive(Clone)]
 pub struct Grid {
     grid: Vec<Option<u8>>,
 }
@@ -194,70 +195,83 @@ impl Grid {
 pub struct Solver<'problem> {
     problem: &'problem Grid,
     solution: Option<Grid>,
-    finder: OptionFinder<'problem>,
 }
 
 impl<'problem> Solver<'problem> {
-    pub fn new(problem: &'problem Grid, finder: OptionFinder<'problem>) -> Self {
+    pub fn new(problem: &'problem Grid) -> Self {
         Self {
             problem,
             solution: None,
-            finder,
         }
     }
 
-    pub fn solve(&self) -> &Self {
-        self.find_solution(0, 0);
-        &self
+    pub fn solve(&mut self) -> &mut Self {
+        let mut solution = self.problem.clone();
+
+        let solved = self.find_solution(&mut solution, 0, 0);
+
+        if solved {
+            self.solution = Some(solution);
+        } else {
+            self.solution = None;
+        }
+
+        self
     }
 
     pub fn get_solution(&self) -> &Option<Grid> {
         &self.solution
     }
 
-    fn find_solution(&self, row_id:usize, column_id:usize) -> bool {
+    fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> bool {
         if row_id > 8 {
             // If we've passed the end of the grid then we've succeeded in finding a solution
             return true;
         } else if column_id > 8 {
             // If we've passed the end of this row then move to the next one
-            return self.find_solution(row_id + 1, 0);
-        } else if self.problem.cell(row_id, column_id).is_some() {
+            return self.find_solution(solution, row_id + 1, 0);
+        } else if solution.cell(row_id, column_id).is_some() {
             // If this cell already has a value, move on to the next one
-            println!("[{}, {}] is already filled", row_id, column_id);
-            return self.find_solution(row_id, column_id + 1);
+            // println!("[{}, {}] is already filled", row_id, column_id);
+            return self.find_solution(solution, row_id, column_id + 1);
         } else {
             // @todo Find a valid solution for this cell
-            let options = self.finder.find_for_cell(row_id, column_id);
+            let options = OptionFinder::find_for_cell(solution, row_id, column_id);
+            if options.is_empty() {
+                return false;
+            }
 
-            println!("Options for [{}, {}]: {:?}", row_id, column_id, options);
+            // println!("Options for [{}, {}]: {:?}", row_id, column_id, options);
+            for option in options {
+                solution.set_cell(row_id, column_id, option);
+                if self.find_solution(solution, row_id, column_id + 1) {
+                    return true;
+                } else {
+                    solution.clear_cell(row_id, column_id);
+                }
+            }
 
-            return self.find_solution(row_id, column_id + 1);
+            // return self.find_solution(solution, row_id, column_id + 1);
+            false
         }
-
-        return false;
     }
 }
 
 // @todo Implement option finder logic
 #[derive(Debug)]
-pub struct OptionFinder<'this_grid> {
-    grid: &'this_grid Grid,
+pub struct OptionFinder<> {
 }
 
-impl <'this_grid>OptionFinder<'this_grid> {
-    pub fn new(grid: &'this_grid Grid) -> Self {
-        Self { grid }
-    }
+impl OptionFinder {
 
-    pub fn find_for_cell(&self, row_id: usize, column_id: usize) -> Vec<u8> {
+    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Vec<u8> {
         // Early out: If this cell already has a value then it can't have any options
-        if self.grid.cell(row_id, column_id).is_some() {
+        if grid.cell(row_id, column_id).is_some() {
             return Vec::new();
         }
 
         let mut options = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let used_vals = Self::build_used_list(self.grid, row_id, column_id);
+        let used_vals = Self::build_used_list(grid, row_id, column_id);
 
         // println!("{:?}", filtered);
 
