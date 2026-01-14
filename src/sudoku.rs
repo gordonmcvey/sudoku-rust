@@ -61,7 +61,7 @@ impl Grid {
     }
 
     // @todo This is a pretty hacky POC and could use a refactor into something that handles
-    // selecting the subslices more elegantly and it should return a Vec instead of an array slice
+    // selecting the subslices more elegantly
     pub fn subgrid(&self, subgrid_id: usize) -> Vec<Option<u8>> {
         // @todo Range check here
         /*
@@ -83,17 +83,10 @@ impl Grid {
         ) * (Self::GRID_HEIGHT * Self::SUBGRID_HEIGHT);
         let subgrid_index = subgrid_col + subgrid_row;
 
-        // println!("Row: {}, Col: {}, Index: {}", subgrid_row, subgrid_col, subgrid_index);
-        // println!("subgrid row 1 {:?}:", &self.grid[subgrid_index .. subgrid_index + 3]);
-        // println!("subgrid row 2 {:?}:", &self.grid[subgrid_index + 9 .. subgrid_index + 3 + 9]);
-        // println!("subgrid row 3 {:?}:", &self.grid[subgrid_index + 18 .. subgrid_index + 3 + 18]);
-
         let mut subgrid:Vec<Option<u8>> = Vec::new();
         for row_start in 0 .. 3 {
             subgrid.extend_from_slice(&self.grid[subgrid_index + (9 * row_start) .. subgrid_index + 3 + (9 * row_start)]);
         }
-
-        // println!("return subgrid values: {:?}:", subgrid);
 
         subgrid
     }
@@ -229,12 +222,10 @@ impl<'problem> Solver<'problem> {
             self.find_solution(solution, row_id + 1, 0)
         } else if solution.cell(row_id, column_id).is_some() {
             // If this cell already has a value, move on to the next one
-            // println!("[{}, {}] is already filled", row_id, column_id);
             self.find_solution(solution, row_id, column_id + 1)
         } else {
-            // @todo Find a valid solution for this cell
+            // Try each possible value in this cell then attempt to solve the rest of the puzzle
             let options = OptionFinder::find_for_cell(solution, row_id, column_id);
-            // println!("Options for [{}, {}]: {:?}", row_id, column_id, options);
 
             for option in options {
                 solution.set_cell(row_id, column_id, option);
@@ -245,6 +236,9 @@ impl<'problem> Solver<'problem> {
                 }
             }
 
+            // If we got here then we failed to solve the puzzle on this branch, either we'll have
+            // to backtrack and try another option, or there are no more options and the puzzle is
+            // not solvable
             false
         }
     }
@@ -265,8 +259,6 @@ impl OptionFinder {
 
         let mut options = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
         let used_vals = Self::build_used_list(grid, row_id, column_id);
-
-        // println!("{:?}", filtered);
 
         for value in used_vals.iter() {
             let found: Option<usize> = options.iter().position(|pos| pos == value);
