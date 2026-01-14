@@ -1,3 +1,5 @@
+use std::ops::{Range, RangeInclusive};
+
 // @todo Implement the game
 #[derive(Debug)]
 pub struct Game {
@@ -15,6 +17,8 @@ impl Grid {
     const GRID_HEIGHT: usize = 9;
     const SUBGRID_WIDTH: usize = 3;
     const SUBGRID_HEIGHT: usize = 3;
+    const MIN_VALID_VAL: u8 = 1;
+    const MAX_VALID_VAL: u8 = 9;
 
     pub fn new() -> Self {
         Self {
@@ -129,9 +133,10 @@ impl Grid {
         self.subgrid_values(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
-    pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> &mut Self {
-        // @todo Range check here
-        self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
+    pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, String> {
+        let validated_value = Self::validate_cell_value(value)?;
+
+        self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(validated_value);
         if self.row_is_unique(row_id)
             && !self.col_is_unique(col_id)
             && !self.subgrid_is_unique_at(row_id, col_id)
@@ -139,7 +144,7 @@ impl Grid {
             self.clear_cell(row_id, col_id);
         }
 
-        self
+        Ok(self)
     }
 
     pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> &mut Self {
@@ -178,6 +183,18 @@ impl Grid {
         }
 
         true
+    }
+
+    fn validate_cell_value(value: u8) -> Result<u8, String> {
+        match value {
+            Self::MIN_VALID_VAL..=Self::MAX_VALID_VAL => Ok(value),
+            _ => Err(format!(
+                "Cells must have a value between {} and {}, {} not allowed",
+                Self::MIN_VALID_VAL,
+                Self::MAX_VALID_VAL,
+                value,
+            ))
+        }
     }
 }
 
