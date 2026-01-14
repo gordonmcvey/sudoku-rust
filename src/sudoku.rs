@@ -1,3 +1,4 @@
+use std::fs::write;
 use std::ops::{Range, RangeInclusive};
 
 // @todo Implement the game
@@ -17,6 +18,8 @@ impl Grid {
     const GRID_HEIGHT: usize = 9;
     const SUBGRID_WIDTH: usize = 3;
     const SUBGRID_HEIGHT: usize = 3;
+    const SUBGRID_ID_LIMIT: usize = (Self::GRID_WIDTH * Self::GRID_HEIGHT) / (Self::SUBGRID_WIDTH * Self::SUBGRID_HEIGHT);
+
     const MIN_VALID_VAL: u8 = 1;
     const MAX_VALID_VAL: u8 = 9;
 
@@ -183,6 +186,27 @@ impl Grid {
         }
 
         true
+    }
+
+    fn validate_row_id(row_id: usize) -> Result<usize, String> {
+        match row_id {
+            0..Self::GRID_HEIGHT => Ok(row_id),
+            _ => Err(format!("Invalid row id: {}", row_id)),
+        }
+    }
+
+    fn validate_col_id(col_id: usize) -> Result<usize, String> {
+        match col_id {
+            0..Self::GRID_WIDTH => Ok(col_id),
+            _ => Err(format!("Invalid column id: {}", col_id)),
+        }
+    }
+
+    fn validate_subgrid_id(col_id: usize) -> Result<usize, String> {
+        match col_id {
+            0..Self::SUBGRID_ID_LIMIT => Ok(col_id),
+            _ => Err(format!("Invalid subgrid id: {}", col_id)),
+        }
     }
 
     fn validate_cell_value(value: u8) -> Result<u8, String> {
