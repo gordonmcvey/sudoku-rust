@@ -66,8 +66,7 @@ impl Grid {
 
     // @todo This is a pretty hacky POC and could use a refactor into something that handles
     // selecting the subslices more elegantly
-    pub fn subgrid(&self, subgrid_id: usize) -> Vec<Option<u8>> {
-        // @todo Range check here
+    pub fn subgrid(&self, subgrid_id: usize) -> Result<Vec<Option<u8>>, String> {
         /*
          * As we're simulating the grid with a 1-dimensional array, a "subgrid" can be considered to
          * be 3 sub-slices of 3 elements each, comprising a total of the 9 elements that make up the
@@ -81,6 +80,7 @@ impl Grid {
          * [0, 1, 2, 9, 10, 11, 18, 19, 20], subgrid 4 would consist of the elements
          * [30, 31, 32, 39, 40, 41, 48, 49, 50], and so on)
          */
+        let subgrid_id = Self::validate_subgrid_id(subgrid_id)?;
         let subgrid_col = subgrid_id * Self::SUBGRID_WIDTH % Self::GRID_WIDTH;
         let subgrid_row = (
             (subgrid_id * Self::GRID_HEIGHT) / (Self::GRID_HEIGHT * Self::SUBGRID_HEIGHT)
@@ -92,10 +92,10 @@ impl Grid {
             subgrid.extend_from_slice(&self.grid[subgrid_index + (9 * row_start) .. subgrid_index + 3 + (9 * row_start)]);
         }
 
-        subgrid
+        Ok(subgrid)
     }
 
-    pub fn subgrid_at(&self, row_id: usize, col_id: usize) -> Vec<Option<u8>> {
+    pub fn subgrid_at(&self, row_id: usize, col_id: usize) -> Result<Vec<Option<u8>>, String> {
         self.subgrid(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
@@ -119,17 +119,17 @@ impl Grid {
             .collect())
     }
 
-    pub fn subgrid_values(&self, subgrid_id: usize) -> Vec<u8> {
-        let subgrid: Vec<Option<u8>> = self.subgrid(subgrid_id);
+    pub fn subgrid_values(&self, subgrid_id: usize) -> Result<Vec<u8>, String> {
+        let subgrid: Vec<Option<u8>> = self.subgrid(subgrid_id)?;
 
         // Is it safe to use unwrap here?
-        subgrid.iter()
+        Ok(subgrid.iter()
             .filter(|row| row.is_some())
             .map(|row| row.unwrap())
-            .collect()
+            .collect())
     }
 
-    pub fn subgrid_values_at(&self, row_id: usize, col_id: usize) -> Vec<u8> {
+    pub fn subgrid_values_at(&self, row_id: usize, col_id: usize) -> Result<Vec<u8>, String> {
         self.subgrid_values(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
@@ -139,7 +139,7 @@ impl Grid {
 
         if !self.row_is_unique(row_id)?
             || !self.col_is_unique(col_id)?
-            || !self.subgrid_is_unique_at(row_id, col_id)
+            || !self.subgrid_is_unique_at(row_id, col_id)?
         {
             self.clear_cell(row_id, col_id);
         }
@@ -161,12 +161,12 @@ impl Grid {
         Ok(Self::values_are_unique(&mut self.col_values(col_id)?))
     }
 
-    fn subgrid_is_unique(&self, subgrid_id: usize) -> bool {
-        Self::values_are_unique(&mut self.subgrid_values(subgrid_id))
+    fn subgrid_is_unique(&self, subgrid_id: usize) -> Result<bool, String> {
+        Ok(Self::values_are_unique(&mut self.subgrid_values(subgrid_id)?))
     }
 
-    fn subgrid_is_unique_at(&self, row_id: usize, col_id: usize) -> bool {
-        Self::values_are_unique(&mut self.subgrid_values_at(row_id, col_id))
+    fn subgrid_is_unique_at(&self, row_id: usize, col_id: usize) -> Result<bool, String> {
+        Ok(Self::values_are_unique(&mut self.subgrid_values_at(row_id, col_id)?))
     }
 
     fn coordinates_to_subgrid(row_id: usize, col_id: usize) -> usize {
@@ -309,7 +309,7 @@ impl OptionFinder {
     fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
         let mut used_values: Vec<u8> = grid.row_values(row_id)?;
         used_values.extend(grid.col_values(column_id)?);
-        used_values.extend(grid.subgrid_values_at(row_id, column_id));
+        used_values.extend(grid.subgrid_values_at(row_id, column_id)?);
 
         used_values.sort();
         used_values.dedup();
