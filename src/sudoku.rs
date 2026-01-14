@@ -11,8 +11,8 @@ pub struct Grid {
 }
 
 impl Grid {
-    const GRID_WIDTH: usize = 9;
-    const GRID_HEIGHT: usize = 9;
+    pub const GRID_WIDTH: usize = 9;
+    pub const GRID_HEIGHT: usize = 9;
     const SUBGRID_WIDTH: usize = 3;
     const SUBGRID_HEIGHT: usize = 3;
     const SUBGRID_ID_LIMIT: usize = (Self::GRID_WIDTH * Self::GRID_HEIGHT) / (Self::SUBGRID_WIDTH * Self::SUBGRID_HEIGHT);
@@ -36,9 +36,11 @@ impl Grid {
         Self { grid }
     }
 
-    pub fn cell(&self, row_id: usize, col_id: usize) -> &Option<u8> {
-        // @todo Range check here
-        &self.grid[row_id * Self::GRID_HEIGHT + col_id]
+    pub fn cell(&self, row_id: usize, col_id: usize) -> Result<&Option<u8>, String> {
+        let row_id = Self::validate_row_id(row_id)?;
+        let col_id = Self::validate_col_id(col_id)?;
+
+        Ok(&self.grid[row_id * Self::GRID_HEIGHT + col_id])
     }
 
     pub fn row(&self, row_id: usize) -> Result<&[Option<u8>], String> {
@@ -134,23 +136,28 @@ impl Grid {
     }
 
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, String> {
+        let row_id = Self::validate_row_id(row_id)?;
+        let col_id = Self::validate_col_id(col_id)?;
         let value = Self::validate_cell_value(value)?;
+
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
 
         if !self.row_is_unique(row_id)?
             || !self.col_is_unique(col_id)?
             || !self.subgrid_is_unique_at(row_id, col_id)?
         {
-            self.clear_cell(row_id, col_id);
+            self.clear_cell(row_id, col_id)?;
         }
 
         Ok(self)
     }
 
-    pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> &mut Self {
-        // @todo Range check here
+    pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> Result<&mut Self, String> {
+        let row_id = Self::validate_row_id(row_id)?;
+        let col_id = Self::validate_col_id(col_id)?;
+
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = None;
-        self
+        Ok(self)
     }
 
     fn row_is_unique(&self, row_id: usize) -> Result<bool, String> {
@@ -239,7 +246,8 @@ impl<'problem> Solver<'problem> {
         let solved = self.find_solution(&mut solution, 0, 0);
         match solved {
             Ok(true) => self.solution = Some(solution),
-            _ =>self.solution = None,
+            Ok(false) => self.solution = None,
+            Err(err) => panic!("{}", err),
         }
 
         self
@@ -250,13 +258,13 @@ impl<'problem> Solver<'problem> {
     }
 
     fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> Result<bool, String> {
-        if row_id > 8 {
+        if row_id > Grid::GRID_HEIGHT - 1 {
             // If we've passed the end of the grid then we've succeeded in finding a solution
             Ok(true)
-        } else if column_id > 8 {
+        } else if column_id > Grid::GRID_WIDTH - 1 {
             // If we've passed the end of this row then move to the next one
             self.find_solution(solution, row_id + 1, 0)
-        } else if solution.cell(row_id, column_id).is_some() {
+        } else if solution.cell(row_id, column_id)?.is_some() {
             // If this cell already has a value, move on to the next one
             self.find_solution(solution, row_id, column_id + 1)
         } else {
@@ -265,10 +273,10 @@ impl<'problem> Solver<'problem> {
 
             for option in options {
                 solution.set_cell(row_id, column_id, option)?;
-                if solution.cell(row_id, column_id).is_some() && self.find_solution(solution, row_id, column_id + 1)? {
+                if solution.cell(row_id, column_id)?.is_some() && self.find_solution(solution, row_id, column_id + 1)? {
                     return Ok(true)
                 } else {
-                    solution.clear_cell(row_id, column_id);
+                    solution.clear_cell(row_id, column_id)?;
                 }
             }
 
@@ -289,7 +297,7 @@ impl OptionFinder {
 
     pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
         // Early out: If this cell already has a value then it can't have any options
-        if grid.cell(row_id, column_id).is_some() {
+        if grid.cell(row_id, column_id)?.is_some() {
             return Ok(Vec::new());
         }
 

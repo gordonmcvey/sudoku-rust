@@ -20,7 +20,7 @@ fn main() {
     // Puzzle from https://en.wikipedia.org/wiki/Sudoku_solving_algorithms
     //
     // NOTE: This puzzle is designed to be pathological for machine solving algorithms.  It does have
-    // a solution but it will take a while for a simple solver to find it, especially for the debug
+    // a solution, but it will take a while for a simple solver to find it, especially for the debug
     // build
 
     // let grid = Grid::from_array([
@@ -53,13 +53,15 @@ fn main() {
 }
 
 fn print_grid(grid: &Grid, base: Option<&Grid>) {
-    for row in 0..9 {
+    for row in 0..Grid::GRID_HEIGHT {
         print!("\t");
-        for col in 0..9 {
-            let raw_val = grid.cell(row, col);
+        for col in 0..Grid::GRID_WIDTH {
+            // @todo Handle result better
+            let raw_val = grid.cell(row, col).unwrap();
             match raw_val {
                 Some(val) => {
-                    if base.is_some() && base.unwrap().cell(row, col) != raw_val {
+                    // @todo Handle result better
+                    if base.is_some() && base.unwrap().cell(row, col).unwrap() != raw_val {
                         print!(" {}", val.to_string().bright_green())
                     } else {
                         print!(" {}", val.to_string().white())
