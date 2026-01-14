@@ -48,8 +48,7 @@ impl Grid {
 
     // @todo This is probably not the preferred way to extrapolate the columns and it returns a Vec
     // instead of an array slice
-    pub fn col(&self, col_id: usize) -> Vec<&Option<u8>> {
-        // @todo Range check here
+    pub fn col(&self, col_id: usize) -> Result<Vec<&Option<u8>>, String> {
         /*
          * As we're simulating the grid with a 1-dimensional array, extracting a "column" involves
          * fetching every nth element from the array where n is the width of the grid, and offsetting
@@ -57,11 +56,12 @@ impl Grid {
          * column 0 equates to elements [0, 9, 18 ...], column 1 is [1, 10, 19 ...], column 3 is
          * [2, 11, 20 ...] and so on
          */
-        self.grid
+        let col_id = Self::validate_col_id(col_id)?;
+        Ok(self.grid
             .iter()
             .skip(col_id)
             .step_by(Self::GRID_WIDTH)
-            .collect::<Vec<&Option<u8>>>()
+            .collect::<Vec<&Option<u8>>>())
     }
 
     // @todo This is a pretty hacky POC and could use a refactor into something that handles
@@ -109,14 +109,14 @@ impl Grid {
             .collect())
     }
 
-    pub fn col_values(&self, column_id: usize) -> Vec<u8> {
-        let col: Vec<&Option<u8>> = self.col(column_id);
+    pub fn col_values(&self, column_id: usize) -> Result<Vec<u8>, String> {
+        let col: Vec<&Option<u8>> = self.col(column_id)?;
 
         // Is it safe to use unwrap here?
-        col.iter()
+        Ok(col.iter()
             .filter(|row| row.is_some())
             .map(|row| row.unwrap())
-            .collect()
+            .collect())
     }
 
     pub fn subgrid_values(&self, subgrid_id: usize) -> Vec<u8> {
@@ -134,12 +134,12 @@ impl Grid {
     }
 
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, String> {
-        let validated_value = Self::validate_cell_value(value)?;
+        let value = Self::validate_cell_value(value)?;
+        self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
 
-        self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(validated_value);
-        if self.row_is_unique(row_id)?
-            && !self.col_is_unique(col_id)
-            && !self.subgrid_is_unique_at(row_id, col_id)
+        if !self.row_is_unique(row_id)?
+            || !self.col_is_unique(col_id)?
+            || !self.subgrid_is_unique_at(row_id, col_id)
         {
             self.clear_cell(row_id, col_id);
         }
@@ -157,8 +157,8 @@ impl Grid {
         Ok(Self::values_are_unique(&mut self.row_values(row_id)?))
     }
 
-    fn col_is_unique(&self, col_id: usize) -> bool {
-        Self::values_are_unique(&mut self.col_values(col_id))
+    fn col_is_unique(&self, col_id: usize) -> Result<bool, String> {
+        Ok(Self::values_are_unique(&mut self.col_values(col_id)?))
     }
 
     fn subgrid_is_unique(&self, subgrid_id: usize) -> bool {
@@ -264,8 +264,8 @@ impl<'problem> Solver<'problem> {
             let options = OptionFinder::find_for_cell(solution, row_id, column_id)?;
 
             for option in options {
-                solution.set_cell(row_id, column_id, option);
-                if self.find_solution(solution, row_id, column_id + 1)? {
+                solution.set_cell(row_id, column_id, option)?;
+                if solution.cell(row_id, column_id).is_some() && self.find_solution(solution, row_id, column_id + 1)? {
                     return Ok(true)
                 } else {
                     solution.clear_cell(row_id, column_id);
@@ -308,7 +308,7 @@ impl OptionFinder {
 
     fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
         let mut used_values: Vec<u8> = grid.row_values(row_id)?;
-        used_values.extend(grid.col_values(column_id));
+        used_values.extend(grid.col_values(column_id)?);
         used_values.extend(grid.subgrid_values_at(row_id, column_id));
 
         used_values.sort();
