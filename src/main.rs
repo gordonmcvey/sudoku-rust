@@ -17,6 +17,7 @@ fn main() {
         [None, None, None, None, Some(8), None, None, Some(7), Some(9)],
     ]);
 
+    println!();
     print_grid(&grid, None);
     println!();
 
@@ -28,6 +29,7 @@ fn main() {
     } else {
         println!("No solution found");
     }
+    println!();
 }
 
 fn print_grid(grid: &Grid, base: Option<&Grid>) {
@@ -43,16 +45,16 @@ fn print_grid(grid: &Grid, base: Option<&Grid>) {
                         print!(" {}", val.to_string().white())
                     }
                 },
-                None => print!(" -"),
+                None => print!("{}", String::from(" -").blue()),
             }
 
             if 2 == col % 3 && col < 8 {
-                print!(" |");
+                print!("{}", String::from(" |").yellow());
             }
         }
         println!();
         if 2 == row % 3 && row < 8 {
-            println!("\t-------+-------+-------");
+            println!("{}", String::from("\t-------+-------+-------").yellow());
         }
     }
 }
