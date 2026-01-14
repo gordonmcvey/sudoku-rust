@@ -17,6 +17,26 @@ fn main() {
         [None, None, None, None, Some(8), None, None, Some(7), Some(9)],
     ]);
 
+    // Puzzle from https://en.wikipedia.org/wiki/Sudoku_solving_algorithms
+    //
+    // NOTE: This puzzle is designed to be pathological for machine solving algorithms.  It does have
+    // a solution but it will take a while for a simple solver to find it, especially for the debug
+    // build
+
+    // let grid = Grid::from_array([
+    //     [None, None, None, None, None, None, None, None, None],
+    //     [None, None, None, None, None, Some(3), None, Some(8), Some(5)],
+    //     [None, None, Some(1), None, Some(2), None, None, None, None],
+    //
+    //     [None, None, None, Some(5), None, Some(7), None, None, None],
+    //     [None, None, Some(4), None, None, None, Some(1), None, None],
+    //     [None, Some(9), None, None, None, None, None, None, None],
+    //
+    //     [Some(5), None, None, None, None, None, None, Some(7), Some(3)],
+    //     [None, None, Some(2), None, Some(1), None, None, None, None],
+    //     [None, None, None, None, Some(4), None, None, None, Some(9)],
+    // ]);
+
     println!();
     print_grid(&grid, None);
     println!();
