@@ -1,6 +1,3 @@
-use std::fs::write;
-use std::ops::{Range, RangeInclusive};
-
 // @todo Implement the game
 #[derive(Debug)]
 pub struct Game {
@@ -44,9 +41,9 @@ impl Grid {
         &self.grid[row_id * Self::GRID_HEIGHT + col_id]
     }
 
-    pub fn row(&self, row_id: usize) -> &[Option<u8>] {
-        // @todo Range check here
-        &self.grid[row_id * Self::GRID_HEIGHT..(row_id + 1) * Self::GRID_HEIGHT]
+    pub fn row(&self, row_id: usize) -> Result<&[Option<u8>], String> {
+        let row_id = Self::validate_row_id(row_id)?;
+        Ok(&self.grid[row_id * Self::GRID_HEIGHT..(row_id + 1) * Self::GRID_HEIGHT])
     }
 
     // @todo This is probably not the preferred way to extrapolate the columns and it returns a Vec
@@ -102,14 +99,14 @@ impl Grid {
         self.subgrid(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
-    pub fn row_values(&self, row_id: usize) -> Vec<u8> {
-        let row: &[Option<u8>] = self.row(row_id);
+    pub fn row_values(&self, row_id: usize) -> Result<Vec<u8>, String> {
+        let row: &[Option<u8>] = self.row(row_id)?;
 
         // Is it safe to use unwrap() here?
-        row.iter()
+        Ok(row.iter()
             .filter(|row| row.is_some())
             .map(|row| row.unwrap())
-            .collect()
+            .collect())
     }
 
     pub fn col_values(&self, column_id: usize) -> Vec<u8> {
@@ -140,7 +137,7 @@ impl Grid {
         let validated_value = Self::validate_cell_value(value)?;
 
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(validated_value);
-        if self.row_is_unique(row_id)
+        if self.row_is_unique(row_id)?
             && !self.col_is_unique(col_id)
             && !self.subgrid_is_unique_at(row_id, col_id)
         {
@@ -156,8 +153,8 @@ impl Grid {
         self
     }
 
-    fn row_is_unique(&self, row_id: usize) -> bool {
-        Self::values_are_unique(&mut self.row_values(row_id))
+    fn row_is_unique(&self, row_id: usize) -> Result<bool, String> {
+        Ok(Self::values_are_unique(&mut self.row_values(row_id)?))
     }
 
     fn col_is_unique(&self, col_id: usize) -> bool {
@@ -240,11 +237,9 @@ impl<'problem> Solver<'problem> {
         let mut solution = self.problem.clone();
 
         let solved = self.find_solution(&mut solution, 0, 0);
-
-        if solved {
-            self.solution = Some(solution);
-        } else {
-            self.solution = None;
+        match solved {
+            Ok(true) => self.solution = Some(solution),
+            _ =>self.solution = None,
         }
 
         self
@@ -254,10 +249,10 @@ impl<'problem> Solver<'problem> {
         &self.solution
     }
 
-    fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> bool {
+    fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> Result<bool, String> {
         if row_id > 8 {
             // If we've passed the end of the grid then we've succeeded in finding a solution
-            true
+            Ok(true)
         } else if column_id > 8 {
             // If we've passed the end of this row then move to the next one
             self.find_solution(solution, row_id + 1, 0)
@@ -266,12 +261,12 @@ impl<'problem> Solver<'problem> {
             self.find_solution(solution, row_id, column_id + 1)
         } else {
             // Try each possible value in this cell then attempt to solve the rest of the puzzle
-            let options = OptionFinder::find_for_cell(solution, row_id, column_id);
+            let options = OptionFinder::find_for_cell(solution, row_id, column_id)?;
 
             for option in options {
                 solution.set_cell(row_id, column_id, option);
-                if self.find_solution(solution, row_id, column_id + 1) {
-                    return true
+                if self.find_solution(solution, row_id, column_id + 1)? {
+                    return Ok(true)
                 } else {
                     solution.clear_cell(row_id, column_id);
                 }
@@ -280,7 +275,7 @@ impl<'problem> Solver<'problem> {
             // If we got here then we failed to solve the puzzle on this branch, either we'll have
             // to backtrack and try another option, or there are no more options and the puzzle is
             // not solvable
-            false
+            Ok(false)
         }
     }
 }
@@ -292,14 +287,14 @@ pub struct OptionFinder<> {
 
 impl OptionFinder {
 
-    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Vec<u8> {
+    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
         // Early out: If this cell already has a value then it can't have any options
         if grid.cell(row_id, column_id).is_some() {
-            return Vec::new();
+            return Ok(Vec::new());
         }
 
         let mut options = vec![1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let used_vals = Self::build_used_list(grid, row_id, column_id);
+        let used_vals = Self::build_used_list(grid, row_id, column_id)?;
 
         for value in used_vals.iter() {
             let found: Option<usize> = options.iter().position(|pos| pos == value);
@@ -308,17 +303,17 @@ impl OptionFinder {
             }
         }
 
-        options
+        Ok(options)
     }
 
-    fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Vec<u8> {
-        let mut used_values: Vec<u8> = grid.row_values(row_id);
+    fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
+        let mut used_values: Vec<u8> = grid.row_values(row_id)?;
         used_values.extend(grid.col_values(column_id));
         used_values.extend(grid.subgrid_values_at(row_id, column_id));
 
         used_values.sort();
         used_values.dedup();
 
-        used_values
+        Ok(used_values)
     }
 }
