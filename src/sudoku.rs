@@ -26,14 +26,35 @@ impl Grid {
         }
     }
 
-    pub fn from_array(array_grid: [[Option<u8>;Self::GRID_WIDTH];Self::GRID_HEIGHT]) -> Self {
-        let mut grid = Vec::with_capacity(Self::GRID_WIDTH * Self::GRID_WIDTH);
+    pub fn from_array(array_grid: [[Option<u8>;Self::GRID_WIDTH];Self::GRID_HEIGHT]) -> Result<Self, String> {
+        let mut this_grid = Self::new();
 
-        for row in array_grid.iter() {
-            grid.extend_from_slice(row);
+        // @todo This feels like a clunky method for validating the grid values, I'm sure it can be simplified
+        for row in 0 .. Self::GRID_HEIGHT {
+            for col in 0 .. Self::GRID_WIDTH {
+                let val = array_grid[row][col];
+                if val.is_some() {
+                    let result = this_grid.set_cell(row, col, val.unwrap());
+                    match result {
+                        Ok(_) => {
+                            if this_grid.cell(row, col)?.is_none() {
+                                return Err(format!(
+                                    "Cell at {}, {} has a non-unique value of {}",
+                                    row,
+                                    col,
+                                    val.unwrap()
+                                ));
+                            }
+                        },
+                        Err(err) => {
+                            return Err(err);
+                        }
+                    }
+                }
+            }
         }
 
-        Self { grid }
+        Ok(this_grid)
     }
 
     pub fn cell(&self, row_id: usize, col_id: usize) -> Result<&Option<u8>, String> {
@@ -146,6 +167,7 @@ impl Grid {
             || !self.col_is_unique(col_id)?
             || !self.subgrid_is_unique_at(row_id, col_id)?
         {
+            // @todo It may be better to return whatever error happened that prevented cell setting
             self.clear_cell(row_id, col_id)?;
         }
 

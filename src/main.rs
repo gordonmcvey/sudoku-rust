@@ -15,7 +15,7 @@ fn main() {
         [None, Some(6), None, None, None, None, Some(2), Some(8), None],
         [None, None, None, Some(4), Some(1), Some(9), None, None, Some(5)],
         [None, None, None, None, Some(8), None, None, Some(7), Some(9)],
-    ]);
+    ]).unwrap();
 
     // Puzzle from https://en.wikipedia.org/wiki/Sudoku_solving_algorithms
     //
@@ -35,7 +35,7 @@ fn main() {
     //     [Some(5), None, None, None, None, None, None, Some(7), Some(3)],
     //     [None, None, Some(2), None, Some(1), None, None, None, None],
     //     [None, None, None, None, Some(4), None, None, None, Some(9)],
-    // ]);
+    // ]).unwrap();
 
     println!();
     print_grid(&grid, None);
