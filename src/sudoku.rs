@@ -1,4 +1,8 @@
+use crate::sudoku::error::{AnswerRangeError, InvalidColumn, InvalidRow, InvalidSubGrid, UniquenessConstraint, UniquenessError};
+
 // @todo Implement the game
+pub mod error;
+
 #[derive(Debug)]
 pub struct Game {
     grid: Grid,
@@ -162,32 +166,23 @@ impl Grid {
     fn validate_uniqueness(&self, row_id: usize, col_id: usize) -> Result<(), String> {
         if !self.row_is_unique(row_id)? {
             // Is it safe to use unwrap() here?
-            return Err(format!(
-                "Cannot insert value {} at {}, {} due to row uniqueness constraints",
-                self.cell(row_id, col_id)?.unwrap(),
-                row_id,
-                col_id,
-            ));
+            return Err(UniquenessError::new(
+                row_id, col_id, self.cell(row_id, col_id)?.unwrap(), UniquenessConstraint::Row
+            ).to_string());
         }
 
         if !self.col_is_unique(col_id)? {
             // Is it safe to use unwrap() here?
-            return Err(format!(
-                "Cannot insert value {} at {}, {} due to column uniqueness constraints",
-                self.cell(row_id, col_id)?.unwrap(),
-                row_id,
-                col_id,
-            ));
+            return Err(UniquenessError::new(
+                row_id, col_id, self.cell(row_id, col_id)?.unwrap(), UniquenessConstraint::Column
+            ).to_string());
         }
 
         if !self.subgrid_is_unique_at(row_id, col_id)? {
             // Is it safe to use unwrap() here?
-            return Err(format!(
-                "Cannot insert value {} at {}, {} due to subgrid uniqueness constraints",
-                self.cell(row_id, col_id)?.unwrap(),
-                row_id,
-                col_id,
-            ));
+            return Err(UniquenessError::new(
+                row_id, col_id, self.cell(row_id, col_id)?.unwrap(), UniquenessConstraint::SubGrid
+            ).to_string());
         }
 
         Ok(())
@@ -236,33 +231,28 @@ impl Grid {
     fn validate_row_id(row_id: usize) -> Result<usize, String> {
         match row_id {
             0..Self::GRID_HEIGHT => Ok(row_id),
-            _ => Err(format!("Invalid row id: {}", row_id)),
+            _ => Err(InvalidRow::new(row_id).to_string()),
         }
     }
 
     fn validate_col_id(col_id: usize) -> Result<usize, String> {
         match col_id {
             0..Self::GRID_WIDTH => Ok(col_id),
-            _ => Err(format!("Invalid column id: {}", col_id)),
+            _ => Err(InvalidColumn::new(col_id).to_string()),
         }
     }
 
-    fn validate_subgrid_id(col_id: usize) -> Result<usize, String> {
-        match col_id {
-            0..Self::SUBGRID_ID_LIMIT => Ok(col_id),
-            _ => Err(format!("Invalid subgrid id: {}", col_id)),
+    fn validate_subgrid_id(subgrid_id: usize) -> Result<usize, String> {
+        match subgrid_id {
+            0..Self::SUBGRID_ID_LIMIT => Ok(subgrid_id),
+            _ => Err(InvalidSubGrid::new(subgrid_id).to_string()),
         }
     }
 
     fn validate_cell_value(value: u8) -> Result<u8, String> {
         match value {
             Self::MIN_VALID_VAL..=Self::MAX_VALID_VAL => Ok(value),
-            _ => Err(format!(
-                "Cells must have a value between {} and {}, {} not allowed",
-                Self::MIN_VALID_VAL,
-                Self::MAX_VALID_VAL,
-                value,
-            ))
+            _ => Err(AnswerRangeError::new(value).to_string())
         }
     }
 }
