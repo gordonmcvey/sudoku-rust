@@ -28,28 +28,14 @@ impl Grid {
 
     pub fn from_array(array_grid: [[Option<u8>;Self::GRID_WIDTH];Self::GRID_HEIGHT]) -> Result<Self, String> {
         let mut this_grid = Self::new();
+        let mut val: Option<u8>;
 
-        // @todo This feels like a clunky method for validating the grid values, I'm sure it can be simplified
         for row in 0 .. Self::GRID_HEIGHT {
             for col in 0 .. Self::GRID_WIDTH {
-                let val = array_grid[row][col];
+                val = array_grid[row][col];
                 if val.is_some() {
-                    let result = this_grid.set_cell(row, col, val.unwrap());
-                    match result {
-                        Ok(_) => {
-                            if this_grid.cell(row, col)?.is_none() {
-                                return Err(format!(
-                                    "Cell at {}, {} has a non-unique value of {}",
-                                    row,
-                                    col,
-                                    val.unwrap()
-                                ));
-                            }
-                        },
-                        Err(err) => {
-                            return Err(err);
-                        }
-                    }
+                    // Is it safe to use unwrap() here?
+                    this_grid.set_cell(row, col, val.unwrap())?;
                 }
             }
         }
@@ -159,19 +145,52 @@ impl Grid {
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, String> {
         let row_id = Self::validate_row_id(row_id)?;
         let col_id = Self::validate_col_id(col_id)?;
+        let old_value = self.grid[row_id * Self::GRID_HEIGHT + col_id].clone();
         let value = Self::validate_cell_value(value)?;
 
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
 
-        if !self.row_is_unique(row_id)?
-            || !self.col_is_unique(col_id)?
-            || !self.subgrid_is_unique_at(row_id, col_id)?
-        {
-            // @todo It may be better to return whatever error happened that prevented cell setting
-            self.clear_cell(row_id, col_id)?;
+        let validated = self.validate_uniqueness(row_id, col_id);
+        if validated.is_err() {
+            self.grid[row_id * Self::GRID_HEIGHT + col_id] = old_value;
+            return Err(validated.unwrap_err());
         }
 
         Ok(self)
+    }
+
+    fn validate_uniqueness(&self, row_id: usize, col_id: usize) -> Result<(), String> {
+        if !self.row_is_unique(row_id)? {
+            // Is it safe to use unwrap() here?
+            return Err(format!(
+                "Cannot insert value {} at {}, {} due to row uniqueness constraints",
+                self.cell(row_id, col_id)?.unwrap(),
+                row_id,
+                col_id,
+            ));
+        }
+
+        if !self.col_is_unique(col_id)? {
+            // Is it safe to use unwrap() here?
+            return Err(format!(
+                "Cannot insert value {} at {}, {} due to column uniqueness constraints",
+                self.cell(row_id, col_id)?.unwrap(),
+                row_id,
+                col_id,
+            ));
+        }
+
+        if !self.subgrid_is_unique_at(row_id, col_id)? {
+            // Is it safe to use unwrap() here?
+            return Err(format!(
+                "Cannot insert value {} at {}, {} due to subgrid uniqueness constraints",
+                self.cell(row_id, col_id)?.unwrap(),
+                row_id,
+                col_id,
+            ));
+        }
+
+        Ok(())
     }
 
     pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> Result<&mut Self, String> {
@@ -294,8 +313,8 @@ impl<'problem> Solver<'problem> {
             let options = OptionFinder::find_for_cell(solution, row_id, column_id)?;
 
             for option in options {
-                solution.set_cell(row_id, column_id, option)?;
-                if solution.cell(row_id, column_id)?.is_some() && self.find_solution(solution, row_id, column_id + 1)? {
+                if solution.set_cell(row_id, column_id, option).is_ok()
+                    && self.find_solution(solution, row_id, column_id + 1)? {
                     return Ok(true)
                 } else {
                     solution.clear_cell(row_id, column_id)?;
