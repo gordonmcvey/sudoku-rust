@@ -1,12 +1,12 @@
-use crate::sudoku::error::{AnswerRangeError, InvalidColumn, InvalidRow, InvalidSubGrid, UniquenessConstraint, UniquenessError};
+use crate::sudoku::error::{*};
 
-// @todo Implement the game
 pub mod error;
 
-#[derive(Debug)]
-pub struct Game {
-    grid: Grid,
-}
+// @todo Implement the game
+// #[derive(Debug)]
+// pub struct Game {
+//     grid: Grid,
+// }
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -48,20 +48,36 @@ impl Grid {
     }
 
     pub fn cell(&self, row_id: usize, col_id: usize) -> Result<&Option<u8>, String> {
-        let row_id = Self::validate_row_id(row_id)?;
-        let col_id = Self::validate_col_id(col_id)?;
+        let row_id = match Self::validate_row_id(row_id) {
+            Ok(row) => row,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        let col_id = match Self::validate_col_id(col_id) {
+            Ok(col) => col,
+            Err(e) => return Err(e.to_string()),
+        };
 
         Ok(&self.grid[row_id * Self::GRID_HEIGHT + col_id])
     }
 
     pub fn row(&self, row_id: usize) -> Result<&[Option<u8>], String> {
-        let row_id = Self::validate_row_id(row_id)?;
+        let row_id = match Self::validate_row_id(row_id) {
+            Ok(row) => row,
+            Err(e) => return Err(e.to_string()),
+        };
+
         Ok(&self.grid[row_id * Self::GRID_HEIGHT..(row_id + 1) * Self::GRID_HEIGHT])
     }
 
     // @todo This is probably not the preferred way to extrapolate the columns and it returns a Vec
     // instead of an array slice
     pub fn col(&self, col_id: usize) -> Result<Vec<&Option<u8>>, String> {
+        let col_id = match Self::validate_col_id(col_id) {
+            Ok(col) => col,
+            Err(e) => return Err(e.to_string()),
+        };
+
         /*
          * As we're simulating the grid with a 1-dimensional array, extracting a "column" involves
          * fetching every nth element from the array where n is the width of the grid, and offsetting
@@ -69,7 +85,6 @@ impl Grid {
          * column 0 equates to elements [0, 9, 18 ...], column 1 is [1, 10, 19 ...], column 3 is
          * [2, 11, 20 ...] and so on
          */
-        let col_id = Self::validate_col_id(col_id)?;
         Ok(self.grid
             .iter()
             .skip(col_id)
@@ -93,7 +108,11 @@ impl Grid {
          * [0, 1, 2, 9, 10, 11, 18, 19, 20], subgrid 4 would consist of the elements
          * [30, 31, 32, 39, 40, 41, 48, 49, 50], and so on)
          */
-        let subgrid_id = Self::validate_subgrid_id(subgrid_id)?;
+        let subgrid_id = match Self::validate_subgrid_id(subgrid_id) {
+            Ok(sg) => sg,
+            Err(e) => return Err(e.to_string()),
+        };
+
         let subgrid_col = subgrid_id * Self::SUBGRID_WIDTH % Self::GRID_WIDTH;
         let subgrid_row = (
             (subgrid_id * Self::GRID_HEIGHT) / (Self::GRID_HEIGHT * Self::SUBGRID_HEIGHT)
@@ -147,11 +166,22 @@ impl Grid {
     }
 
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, String> {
-        let row_id = Self::validate_row_id(row_id)?;
-        let col_id = Self::validate_col_id(col_id)?;
-        let old_value = self.grid[row_id * Self::GRID_HEIGHT + col_id].clone();
-        let value = Self::validate_cell_value(value)?;
+        let row_id = match Self::validate_row_id(row_id) {
+            Ok(row) => row,
+            Err(e) => return Err(e.to_string()),
+        };
 
+        let col_id = match Self::validate_col_id(col_id) {
+            Ok(col) => col,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        let value = match Self::validate_cell_value(value) {
+            Ok(val) => val,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        let old_value = self.grid[row_id * Self::GRID_HEIGHT + col_id].clone();
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
 
         let validated = self.validate_uniqueness(row_id, col_id);
@@ -189,8 +219,15 @@ impl Grid {
     }
 
     pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> Result<&mut Self, String> {
-        let row_id = Self::validate_row_id(row_id)?;
-        let col_id = Self::validate_col_id(col_id)?;
+        let row_id = match Self::validate_row_id(row_id) {
+            Ok(row) => row,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        let col_id = match Self::validate_col_id(col_id) {
+            Ok(col) => col,
+            Err(e) => return Err(e.to_string()),
+        };
 
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = None;
         Ok(self)
@@ -228,31 +265,31 @@ impl Grid {
         true
     }
 
-    fn validate_row_id(row_id: usize) -> Result<usize, String> {
+    fn validate_row_id(row_id: usize) -> Result<usize, InvalidRow> {
         match row_id {
             0..Self::GRID_HEIGHT => Ok(row_id),
-            _ => Err(InvalidRow::new(row_id).to_string()),
+            _ => Err(InvalidRow::new(row_id)),
         }
     }
 
-    fn validate_col_id(col_id: usize) -> Result<usize, String> {
+    fn validate_col_id(col_id: usize) -> Result<usize, InvalidColumn> {
         match col_id {
             0..Self::GRID_WIDTH => Ok(col_id),
-            _ => Err(InvalidColumn::new(col_id).to_string()),
+            _ => Err(InvalidColumn::new(col_id)),
         }
     }
 
-    fn validate_subgrid_id(subgrid_id: usize) -> Result<usize, String> {
+    fn validate_subgrid_id(subgrid_id: usize) -> Result<usize, InvalidSubGrid> {
         match subgrid_id {
             0..Self::SUBGRID_ID_LIMIT => Ok(subgrid_id),
-            _ => Err(InvalidSubGrid::new(subgrid_id).to_string()),
+            _ => Err(InvalidSubGrid::new(subgrid_id)),
         }
     }
 
-    fn validate_cell_value(value: u8) -> Result<u8, String> {
+    fn validate_cell_value(value: u8) -> Result<u8, AnswerRangeError> {
         match value {
             Self::MIN_VALID_VAL..=Self::MAX_VALID_VAL => Ok(value),
-            _ => Err(AnswerRangeError::new(value).to_string())
+            _ => Err(AnswerRangeError::new(value))
         }
     }
 }
