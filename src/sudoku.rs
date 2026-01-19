@@ -1,3 +1,4 @@
+use std::error::Error;
 use crate::sudoku::error::{*};
 
 pub mod error;
@@ -30,7 +31,7 @@ impl Grid {
         }
     }
 
-    pub fn from_array(array_grid: [[Option<u8>;Self::GRID_WIDTH];Self::GRID_HEIGHT]) -> Result<Self, String> {
+    pub fn from_array(array_grid: [[Option<u8>;Self::GRID_WIDTH];Self::GRID_HEIGHT]) -> Result<Self, Box<dyn Error>> {
         let mut this_grid = Self::new();
         let mut val: Option<u8>;
 
@@ -47,17 +48,9 @@ impl Grid {
         Ok(this_grid)
     }
 
-    pub fn cell(&self, row_id: usize, col_id: usize) -> Result<&Option<u8>, String> {
-        // @todo Figure out how to return different error types
-        let row_id = match Self::validate_row_id(row_id) {
-            Ok(row) => row,
-            Err(e) => return Err(e.to_string()),
-        };
-
-        let col_id = match Self::validate_col_id(col_id) {
-            Ok(col) => col,
-            Err(e) => return Err(e.to_string()),
-        };
+    pub fn cell(&self, row_id: usize, col_id: usize) -> Result<&Option<u8>, Box<dyn Error>> {
+        let row_id = Self::validate_row_id(row_id)?;
+        let col_id = Self::validate_col_id(col_id)?;
 
         Ok(&self.grid[row_id * Self::GRID_HEIGHT + col_id])
     }
@@ -159,22 +152,10 @@ impl Grid {
         self.subgrid_values(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
-    pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, String> {
-        // @todo Figure out how to return different error types
-        let row_id = match Self::validate_row_id(row_id) {
-            Ok(row) => row,
-            Err(e) => return Err(e.to_string()),
-        };
-
-        let col_id = match Self::validate_col_id(col_id) {
-            Ok(col) => col,
-            Err(e) => return Err(e.to_string()),
-        };
-
-        let value = match Self::validate_cell_value(value) {
-            Ok(val) => val,
-            Err(e) => return Err(e.to_string()),
-        };
+    pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, Box<dyn Error>> {
+        let row_id = Self::validate_row_id(row_id)?;
+        let col_id = Self::validate_col_id(col_id)?;
+        let value = Self::validate_cell_value(value)?;
 
         let old_value = self.grid[row_id * Self::GRID_HEIGHT + col_id].clone();
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = Some(value);
@@ -182,91 +163,62 @@ impl Grid {
         let validated = self.validate_uniqueness(row_id, col_id);
         if validated.is_err() {
             self.grid[row_id * Self::GRID_HEIGHT + col_id] = old_value;
-            return Err(validated.unwrap_err());
+            return Err(validated.unwrap_err().into());
         }
 
         Ok(self)
     }
 
-    fn validate_uniqueness(&self, row_id: usize, col_id: usize) -> Result<(), String> {
-        // @todo Figure out how to return different error types
+    fn validate_uniqueness(&self, row_id: usize, col_id: usize) -> Result<(), Box<dyn Error>> {
         if !self.row_is_unique(row_id)? {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
                 row_id, col_id, self.cell(row_id, col_id)?.unwrap(), UniquenessConstraint::Row
-            ).to_string());
+            ).into());
         }
 
         if !self.col_is_unique(col_id)? {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
                 row_id, col_id, self.cell(row_id, col_id)?.unwrap(), UniquenessConstraint::Column
-            ).to_string());
+            ).into());
         }
 
         if !self.subgrid_is_unique_at(row_id, col_id)? {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
                 row_id, col_id, self.cell(row_id, col_id)?.unwrap(), UniquenessConstraint::SubGrid
-            ).to_string());
+            ).into());
         }
 
         Ok(())
     }
 
-    pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> Result<&mut Self, String> {
-        // @todo Figure out how to return different error types
-        let row_id = match Self::validate_row_id(row_id) {
-            Ok(row) => row,
-            Err(e) => return Err(e.to_string()),
-        };
-
-        let col_id = match Self::validate_col_id(col_id) {
-            Ok(col) => col,
-            Err(e) => return Err(e.to_string()),
-        };
+    pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> Result<&mut Self, Box<dyn Error>> {
+        let row_id = Self::validate_row_id(row_id)?;
+        let col_id = Self::validate_col_id(col_id)?;
 
         self.grid[row_id * Self::GRID_HEIGHT + col_id] = None;
         Ok(self)
     }
 
-    fn row_is_unique(&self, row_id: usize) -> Result<bool, String> {
-        // @todo This has to return String until the calling methods can handle returning multiple error types
-        let mut row_values = match self.row_values(row_id) {
-            Ok(row) => row,
-            Err(e) => return Err(e.to_string()),
-        };
-
+    fn row_is_unique(&self, row_id: usize) -> Result<bool, InvalidRow> {
+        let mut row_values = self.row_values(row_id)?;
         Ok(Self::values_are_unique(&mut row_values))
     }
 
-    fn col_is_unique(&self, col_id: usize) -> Result<bool, String> {
-        // @todo This has to return String until the calling methods can handle returning multiple error types
-        let mut col_values = match self.col_values(col_id) {
-            Ok(col) => col,
-            Err(e) => return Err(e.to_string()),
-        };
-
+    fn col_is_unique(&self, col_id: usize) -> Result<bool, InvalidColumn> {
+        let mut col_values = self.col_values(col_id)?;
         Ok(Self::values_are_unique(&mut col_values))
     }
 
-    fn subgrid_is_unique(&self, subgrid_id: usize) -> Result<bool, String> {
-        // @todo This has to return String until the calling methods can handle returning multiple error types
-        let mut subgrid_values = match self.subgrid_values(subgrid_id) {
-            Ok(sub) => sub,
-            Err(e) => return Err(e.to_string()),
-        };
-
+    fn subgrid_is_unique(&self, subgrid_id: usize) -> Result<bool, InvalidSubGrid> {
+        let mut subgrid_values = self.subgrid_values(subgrid_id)?;
         Ok(Self::values_are_unique(&mut subgrid_values))
     }
 
-    fn subgrid_is_unique_at(&self, row_id: usize, col_id: usize) -> Result<bool, String> {
-        // @todo This has to return String until the calling methods can handle returning multiple error types
-        let mut subgrid_values = match self.subgrid_values_at(row_id, col_id) {
-            Ok(sub) => sub,
-            Err(e) => return Err(e.to_string()),
-        };
-
+    fn subgrid_is_unique_at(&self, row_id: usize, col_id: usize) -> Result<bool, InvalidSubGrid> {
+        let mut subgrid_values = self.subgrid_values_at(row_id, col_id)?;
         Ok(Self::values_are_unique(&mut subgrid_values))
     }
 
@@ -346,7 +298,7 @@ impl<'problem> Solver<'problem> {
         &self.solution
     }
 
-    fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> Result<bool, String> {
+    fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> Result<bool, Box<dyn Error>> {
         if row_id > Grid::GRID_HEIGHT - 1 {
             // If we've passed the end of the grid then we've succeeded in finding a solution
             Ok(true)
@@ -377,14 +329,13 @@ impl<'problem> Solver<'problem> {
     }
 }
 
-// @todo Implement option finder logic
 #[derive(Debug)]
 pub struct OptionFinder<> {
 }
 
 impl OptionFinder {
 
-    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
+    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, Box<dyn Error>> {
         // Early out: If this cell already has a value then it can't have any options
         if grid.cell(row_id, column_id)?.is_some() {
             return Ok(Vec::new());
@@ -403,22 +354,11 @@ impl OptionFinder {
         Ok(options)
     }
 
-    fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
-        // @todo Figure out how to return different error types
-        let mut used_values: Vec<u8> = match grid.row_values(row_id) {
-            Ok(row_values) => row_values,
-            Err(e) => return Err(e.to_string()),
-        };
+    fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+        let mut used_values: Vec<u8> = grid.row_values(row_id)?;
 
-        match grid.col_values(column_id) {
-            Ok(col_values) => used_values.extend(col_values),
-            Err(e) => return Err(e.to_string()),
-        };
-
-        match grid.subgrid_values_at(row_id, column_id) {
-            Ok(subgrid_values) => used_values.extend(subgrid_values),
-            Err(e) => return Err(e.to_string()),
-        }
+        used_values.extend(grid.col_values(column_id)?);
+        used_values.extend(grid.subgrid_values_at(row_id, column_id)?);
 
         used_values.sort();
         used_values.dedup();
