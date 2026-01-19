@@ -77,7 +77,7 @@ fn main() {
             },
         };
 
-        if (selection < 1 || selection > puzzles.len()) {
+        if selection < 1 || selection > puzzles.len() {
             println!("Invalid selection");
             break;
         }
