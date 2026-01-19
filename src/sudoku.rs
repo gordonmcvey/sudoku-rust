@@ -48,6 +48,7 @@ impl Grid {
     }
 
     pub fn cell(&self, row_id: usize, col_id: usize) -> Result<&Option<u8>, String> {
+        // @todo Figure out how to return different error types
         let row_id = match Self::validate_row_id(row_id) {
             Ok(row) => row,
             Err(e) => return Err(e.to_string()),
@@ -61,22 +62,15 @@ impl Grid {
         Ok(&self.grid[row_id * Self::GRID_HEIGHT + col_id])
     }
 
-    pub fn row(&self, row_id: usize) -> Result<&[Option<u8>], String> {
-        let row_id = match Self::validate_row_id(row_id) {
-            Ok(row) => row,
-            Err(e) => return Err(e.to_string()),
-        };
-
+    pub fn row(&self, row_id: usize) -> Result<&[Option<u8>], InvalidRow> {
+        let row_id = Self::validate_row_id(row_id)?;
         Ok(&self.grid[row_id * Self::GRID_HEIGHT..(row_id + 1) * Self::GRID_HEIGHT])
     }
 
     // @todo This is probably not the preferred way to extrapolate the columns and it returns a Vec
     // instead of an array slice
-    pub fn col(&self, col_id: usize) -> Result<Vec<&Option<u8>>, String> {
-        let col_id = match Self::validate_col_id(col_id) {
-            Ok(col) => col,
-            Err(e) => return Err(e.to_string()),
-        };
+    pub fn col(&self, col_id: usize) -> Result<Vec<&Option<u8>>, InvalidColumn> {
+        let col_id = Self::validate_col_id(col_id)?;
 
         /*
          * As we're simulating the grid with a 1-dimensional array, extracting a "column" involves
@@ -94,7 +88,7 @@ impl Grid {
 
     // @todo This is a pretty hacky POC and could use a refactor into something that handles
     // selecting the subslices more elegantly
-    pub fn subgrid(&self, subgrid_id: usize) -> Result<Vec<Option<u8>>, String> {
+    pub fn subgrid(&self, subgrid_id: usize) -> Result<Vec<Option<u8>>, InvalidSubGrid> {
         /*
          * As we're simulating the grid with a 1-dimensional array, a "subgrid" can be considered to
          * be 3 sub-slices of 3 elements each, comprising a total of the 9 elements that make up the
@@ -110,7 +104,7 @@ impl Grid {
          */
         let subgrid_id = match Self::validate_subgrid_id(subgrid_id) {
             Ok(sg) => sg,
-            Err(e) => return Err(e.to_string()),
+            Err(e) => return Err(e),
         };
 
         let subgrid_col = subgrid_id * Self::SUBGRID_WIDTH % Self::GRID_WIDTH;
@@ -127,11 +121,11 @@ impl Grid {
         Ok(subgrid)
     }
 
-    pub fn subgrid_at(&self, row_id: usize, col_id: usize) -> Result<Vec<Option<u8>>, String> {
+    pub fn subgrid_at(&self, row_id: usize, col_id: usize) -> Result<Vec<Option<u8>>, InvalidSubGrid> {
         self.subgrid(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
-    pub fn row_values(&self, row_id: usize) -> Result<Vec<u8>, String> {
+    pub fn row_values(&self, row_id: usize) -> Result<Vec<u8>, InvalidRow> {
         let row: &[Option<u8>] = self.row(row_id)?;
 
         // Is it safe to use unwrap() here?
@@ -141,7 +135,7 @@ impl Grid {
             .collect())
     }
 
-    pub fn col_values(&self, column_id: usize) -> Result<Vec<u8>, String> {
+    pub fn col_values(&self, column_id: usize) -> Result<Vec<u8>, InvalidColumn> {
         let col: Vec<&Option<u8>> = self.col(column_id)?;
 
         // Is it safe to use unwrap here?
@@ -151,7 +145,7 @@ impl Grid {
             .collect())
     }
 
-    pub fn subgrid_values(&self, subgrid_id: usize) -> Result<Vec<u8>, String> {
+    pub fn subgrid_values(&self, subgrid_id: usize) -> Result<Vec<u8>, InvalidSubGrid> {
         let subgrid: Vec<Option<u8>> = self.subgrid(subgrid_id)?;
 
         // Is it safe to use unwrap here?
@@ -161,11 +155,12 @@ impl Grid {
             .collect())
     }
 
-    pub fn subgrid_values_at(&self, row_id: usize, col_id: usize) -> Result<Vec<u8>, String> {
+    pub fn subgrid_values_at(&self, row_id: usize, col_id: usize) -> Result<Vec<u8>, InvalidSubGrid> {
         self.subgrid_values(Self::coordinates_to_subgrid(row_id, col_id))
     }
 
     pub fn set_cell(&mut self, row_id: usize, col_id: usize, value: u8) -> Result<&mut Self, String> {
+        // @todo Figure out how to return different error types
         let row_id = match Self::validate_row_id(row_id) {
             Ok(row) => row,
             Err(e) => return Err(e.to_string()),
@@ -194,6 +189,7 @@ impl Grid {
     }
 
     fn validate_uniqueness(&self, row_id: usize, col_id: usize) -> Result<(), String> {
+        // @todo Figure out how to return different error types
         if !self.row_is_unique(row_id)? {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
@@ -219,6 +215,7 @@ impl Grid {
     }
 
     pub fn clear_cell(&mut self, row_id: usize, col_id: usize) -> Result<&mut Self, String> {
+        // @todo Figure out how to return different error types
         let row_id = match Self::validate_row_id(row_id) {
             Ok(row) => row,
             Err(e) => return Err(e.to_string()),
@@ -234,19 +231,43 @@ impl Grid {
     }
 
     fn row_is_unique(&self, row_id: usize) -> Result<bool, String> {
-        Ok(Self::values_are_unique(&mut self.row_values(row_id)?))
+        // @todo This has to return String until the calling methods can handle returning multiple error types
+        let mut row_values = match self.row_values(row_id) {
+            Ok(row) => row,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        Ok(Self::values_are_unique(&mut row_values))
     }
 
     fn col_is_unique(&self, col_id: usize) -> Result<bool, String> {
-        Ok(Self::values_are_unique(&mut self.col_values(col_id)?))
+        // @todo This has to return String until the calling methods can handle returning multiple error types
+        let mut col_values = match self.col_values(col_id) {
+            Ok(col) => col,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        Ok(Self::values_are_unique(&mut col_values))
     }
 
     fn subgrid_is_unique(&self, subgrid_id: usize) -> Result<bool, String> {
-        Ok(Self::values_are_unique(&mut self.subgrid_values(subgrid_id)?))
+        // @todo This has to return String until the calling methods can handle returning multiple error types
+        let mut subgrid_values = match self.subgrid_values(subgrid_id) {
+            Ok(sub) => sub,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        Ok(Self::values_are_unique(&mut subgrid_values))
     }
 
     fn subgrid_is_unique_at(&self, row_id: usize, col_id: usize) -> Result<bool, String> {
-        Ok(Self::values_are_unique(&mut self.subgrid_values_at(row_id, col_id)?))
+        // @todo This has to return String until the calling methods can handle returning multiple error types
+        let mut subgrid_values = match self.subgrid_values_at(row_id, col_id) {
+            Ok(sub) => sub,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        Ok(Self::values_are_unique(&mut subgrid_values))
     }
 
     fn coordinates_to_subgrid(row_id: usize, col_id: usize) -> usize {
@@ -383,9 +404,21 @@ impl OptionFinder {
     }
 
     fn build_used_list(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, String> {
-        let mut used_values: Vec<u8> = grid.row_values(row_id)?;
-        used_values.extend(grid.col_values(column_id)?);
-        used_values.extend(grid.subgrid_values_at(row_id, column_id)?);
+        // @todo Figure out how to return different error types
+        let mut used_values: Vec<u8> = match grid.row_values(row_id) {
+            Ok(row_values) => row_values,
+            Err(e) => return Err(e.to_string()),
+        };
+
+        match grid.col_values(column_id) {
+            Ok(col_values) => used_values.extend(col_values),
+            Err(e) => return Err(e.to_string()),
+        };
+
+        match grid.subgrid_values_at(row_id, column_id) {
+            Ok(subgrid_values) => used_values.extend(subgrid_values),
+            Err(e) => return Err(e.to_string()),
+        }
 
         used_values.sort();
         used_values.dedup();
