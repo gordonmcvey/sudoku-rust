@@ -103,9 +103,9 @@ fn main() {
 }
 
 fn print_grid(grid: &Grid, base: Option<&Grid>) {
-    for row in 0..Grid::GRID_HEIGHT {
+    for row in 0..Grid::GRID_COLUMNS {
         print!("\t");
-        for col in 0..Grid::GRID_WIDTH {
+        for col in 0..Grid::GRID_ROWS {
             // @todo Handle result better
             let raw_val = grid.cell(row, col).unwrap();
             match raw_val {
