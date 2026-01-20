@@ -1,6 +1,6 @@
 use std::error::Error;
 use crate::sudoku::grid::Grid;
-use crate::sudoku::OptionFinder;
+use crate::sudoku::option_finder::OptionFinder;
 
 #[derive(Debug)]
 pub struct Solver<'problem> {
