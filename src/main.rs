@@ -1,6 +1,7 @@
 use std::io;
-use sudoku_rust::sudoku::{Grid, Solver};
 use colored::Colorize;
+use sudoku_rust::sudoku::grid::Grid;
+use sudoku_rust::sudoku::Solver;
 
 fn main() {
     let puzzles: [[[Option<u8>; 9]; 9]; 3] = [

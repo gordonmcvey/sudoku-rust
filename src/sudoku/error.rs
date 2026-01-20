@@ -1,6 +1,6 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
-use crate::sudoku::Grid;
+use crate::sudoku::grid::Grid;
 
 #[derive(Debug)]
 pub enum UniquenessConstraint {
