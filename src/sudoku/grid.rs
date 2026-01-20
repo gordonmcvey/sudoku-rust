@@ -1,5 +1,5 @@
 use std::error::Error;
-use crate::sudoku::error::{AnswerRangeError, InvalidColumn, InvalidRow, InvalidSubGrid, UniquenessConstraint, UniquenessError};
+use crate::sudoku::error::{*};
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -149,16 +149,26 @@ impl Grid {
         let row_id = Self::validate_row_id(row_id)?;
         let column_id = Self::validate_column_id(column_id)?;
         let value = Self::validate_cell_value(value)?;
-        let old_value = self.grid_data[row_id * Self::GRID_COLUMNS + column_id].clone();
 
-        self.grid_data[row_id * Self::GRID_COLUMNS + column_id] = Some(value);
+        let index = row_id * Self::GRID_COLUMNS + column_id;
+        let old_value = self.grid_data[index].clone();
+
+        self.grid_data[index] = Some(value);
 
         let validated = self.validate_uniqueness(row_id, column_id);
         if validated.is_err() {
-            self.grid_data[row_id * Self::GRID_COLUMNS + column_id] = old_value;
+            self.grid_data[index] = old_value;
             return Err(validated.unwrap_err().into());
         }
 
+        Ok(self)
+    }
+
+    pub fn clear_cell(&mut self, row_id: usize, column_id: usize) -> Result<&mut Self, Box<dyn Error>> {
+        let row_id = Self::validate_row_id(row_id)?;
+        let column_id = Self::validate_column_id(column_id)?;
+
+        self.grid_data[row_id * Self::GRID_COLUMNS + column_id] = None;
         Ok(self)
     }
 
@@ -196,14 +206,6 @@ impl Grid {
         Ok(())
     }
 
-    pub fn clear_cell(&mut self, row_id: usize, column_id: usize) -> Result<&mut Self, Box<dyn Error>> {
-        let row_id = Self::validate_row_id(row_id)?;
-        let column_id = Self::validate_column_id(column_id)?;
-
-        self.grid_data[row_id * Self::GRID_COLUMNS + column_id] = None;
-        Ok(self)
-    }
-
     fn row_is_unique(&self, row_id: usize) -> Result<bool, InvalidRow> {
         let mut row_values = self.row_values(row_id)?;
         Ok(Self::values_are_unique(&mut row_values))
@@ -224,10 +226,6 @@ impl Grid {
         Ok(Self::values_are_unique(&mut subgrid_values))
     }
 
-    fn coordinates_to_subgrid(row_id: usize, column_id: usize) -> usize {
-        ((row_id / Self::SUBGRID_COLUMNS) * Self::SUBGRID_COLUMNS) + (column_id / Self::SUBGRID_ROWS)
-    }
-
     fn values_are_unique(values: &mut [u8]) -> bool {
         values.sort();
 
@@ -238,6 +236,10 @@ impl Grid {
         }
 
         true
+    }
+
+    fn coordinates_to_subgrid(row_id: usize, column_id: usize) -> usize {
+        ((row_id / Self::SUBGRID_COLUMNS) * Self::SUBGRID_COLUMNS) + (column_id / Self::SUBGRID_ROWS)
     }
 
     fn validate_row_id(row_id: usize) -> Result<usize, InvalidRow> {
