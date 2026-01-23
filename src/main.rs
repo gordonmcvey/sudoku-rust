@@ -1,6 +1,6 @@
 use std::io;
-use colored::Colorize;
 use sudoku_rust::sudoku::{grid::Grid, solver::Solver};
+use sudoku_rust::sudoku::grid_diff::GridDiff;
 
 fn main() {
     let puzzles: [[[Option<u8>; 9]; 9]; 3] = [
@@ -93,39 +93,9 @@ fn main() {
         let solution = solver.solve().get_solution();
 
         if let Some(solution) = solution {
-            print_grid(&solution, Some(&grid));
+            println!("{}", GridDiff::new(&grid, &solution));
         } else {
             println!("No solution found");
-        }
-        println!();
-    }
-}
-
-fn print_grid(grid: &Grid, base: Option<&Grid>) {
-    for row in 0..Grid::GRID_COLUMNS {
-        print!("\t");
-        for col in 0..Grid::GRID_ROWS {
-            // @todo Handle result better
-            let raw_val = grid.cell(row, col).unwrap();
-            match raw_val {
-                Some(val) => {
-                    // @todo Handle result better
-                    if base.is_some() && base.unwrap().cell(row, col).unwrap() != raw_val {
-                        print!(" {}", val.to_string().bright_green())
-                    } else {
-                        print!(" {}", val.to_string().white())
-                    }
-                },
-                None => print!("{}", String::from(" -").blue()),
-            }
-
-            if 2 == col % 3 && col < 8 {
-                print!("{}", String::from(" |").yellow());
-            }
-        }
-        println!();
-        if 2 == row % 3 && row < 8 {
-            println!("{}", String::from("\t-------+-------+-------").yellow());
         }
     }
 }
