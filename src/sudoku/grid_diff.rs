@@ -1,6 +1,7 @@
 use std::fmt::{Display, Formatter, Result as FmtResult, Error as fmtError};
 use colored::Colorize;
-use crate::sudoku::grid::Grid;
+use crate::sudoku::grid::{Grid};
+use crate::sudoku::reference::GridReference;
 
 pub struct GridDiff<'a> {
     base: &'a Grid,
@@ -20,10 +21,12 @@ impl<'a> Display for GridDiff<'a> {
         for row in 0..Grid::GRID_COLUMNS {
             output.push_str("\t");
             for col in 0..Grid::GRID_ROWS {
-                let raw_val = self.current.cell(row, col).map_err(|_| fmtError)?;
+                let grid_ref = GridReference::from_numbers(row, col).map_err(|_| fmtError)?;
+                let raw_val = self.current.cell(&grid_ref);
                 let cooked_val = match raw_val {
                     Some(val) => {
-                        if self.base.cell(row, col).map_err(|_| fmtError)? != raw_val {
+                        let prev_val = self.base.cell(&grid_ref);
+                        if prev_val != raw_val {
                             format!(" {}", val.to_string().bright_green())
                         } else {
                             format!(" {}", val.to_string().white())

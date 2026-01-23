@@ -2,6 +2,7 @@ use std::error::Error;
 use std::fmt::{Display, Formatter, Result as FmtResult, Error as fmtError};
 use colored::Colorize;
 use crate::sudoku::error::{*};
+use crate::sudoku::reference::{*};
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -34,7 +35,7 @@ impl Grid {
                 val = array_grid[row][col];
                 if val.is_some() {
                     // Is it safe to use unwrap() here?
-                    this_grid.set_cell(row, col, val.unwrap())?;
+                    this_grid.set_cell(&GridReference::from_numbers(row, col)?, val.unwrap())?;
                 }
             }
         }
@@ -42,23 +43,18 @@ impl Grid {
         Ok(this_grid)
     }
 
-    pub fn cell(&self, row_id: usize, column_id: usize) -> Result<&Option<u8>, Box<dyn Error>> {
-        let row_id = Self::validate_row_id(row_id)?;
-        let column_id = Self::validate_column_id(column_id)?;
-
-        Ok(&self.grid_data[row_id * Self::GRID_COLUMNS + column_id])
+    pub fn cell(&self, grid_ref: &GridReference) -> &Option<u8> {
+        &self.grid_data[grid_ref.to_index()]
     }
 
-    pub fn row(&self, row_id: usize) -> Result<&[Option<u8>], InvalidRow> {
-        let row_id = Self::validate_row_id(row_id)?;
-        Ok(&self.grid_data[row_id * Self::GRID_COLUMNS..(row_id + 1) * Self::GRID_COLUMNS])
+    pub fn row(&self, row_ref: &RowReference) -> &[Option<u8>] {
+        let row = row_ref.row();
+        &self.grid_data[row * Self::GRID_COLUMNS..(row + 1) * Self::GRID_COLUMNS]
     }
 
     // @todo This is probably not the preferred way to extrapolate the columns and it returns a Vec
     // instead of an array slice
-    pub fn column(&self, column_id: usize) -> Result<Vec<&Option<u8>>, InvalidColumn> {
-        let column_id = Self::validate_column_id(column_id)?;
-
+    pub fn column(&self, column_ref: &ColumnReference) -> Vec<&Option<u8>> {
         /*
          * As we're simulating the grid with a 1-dimensional array, extracting a "column" involves
          * fetching every nth element from the array where n is the width of the grid, and offsetting
@@ -66,12 +62,12 @@ impl Grid {
          * column 0 equates to elements [0, 9, 18 ...], column 1 is [1, 10, 19 ...], column 3 is
          * [2, 11, 20 ...] and so on
          */
-        Ok(self.grid_data
+        self.grid_data
             .iter()
-            .skip(column_id)
+            .skip(column_ref.column())
             // Stepping is to the same column on the next row
             .step_by(Self::GRID_ROWS)
-            .collect::<Vec<&Option<u8>>>())
+            .collect::<Vec<&Option<u8>>>()
     }
 
     // @todo This is a pretty hacky POC and could use a refactor into something that handles
@@ -90,10 +86,7 @@ impl Grid {
          * [0, 1, 2, 9, 10, 11, 18, 19, 20], subgrid 4 would consist of the elements
          * [30, 31, 32, 39, 40, 41, 48, 49, 50], and so on)
          */
-        let subgrid_id = match Self::validate_subgrid_id(subgrid_id) {
-            Ok(sg) => sg,
-            Err(e) => return Err(e),
-        };
+        let subgrid_id = Self::validate_subgrid_id(subgrid_id)?;
 
         let subgrid_col = subgrid_id * Self::SUBGRID_ROWS % Self::GRID_ROWS;
         let subgrid_row = (
@@ -109,28 +102,28 @@ impl Grid {
         Ok(subgrid)
     }
 
-    pub fn subgrid_at(&self, row_id: usize, column_id: usize) -> Result<Vec<Option<u8>>, InvalidSubGrid> {
-        self.subgrid(Self::coordinates_to_subgrid(row_id, column_id))
+    pub fn subgrid_at(&self, grid_ref: &GridReference) -> Result<Vec<Option<u8>>, InvalidSubGrid> {
+        self.subgrid(Self::coordinates_to_subgrid(&grid_ref))
     }
 
-    pub fn row_values(&self, row_id: usize) -> Result<Vec<u8>, InvalidRow> {
-        let row: &[Option<u8>] = self.row(row_id)?;
+    pub fn row_values(&self, row_ref: &RowReference) -> Vec<u8> {
+        let row: &[Option<u8>] = self.row(&row_ref);
 
         // Is it safe to use unwrap() here?
-        Ok(row.iter()
+        row.iter()
             .filter(|row| row.is_some())
             .map(|row| row.unwrap())
-            .collect())
+            .collect()
     }
 
-    pub fn col_values(&self, column_id: usize) -> Result<Vec<u8>, InvalidColumn> {
-        let col: Vec<&Option<u8>> = self.column(column_id)?;
+    pub fn col_values(&self, column_ref: &ColumnReference) -> Vec<u8> {
+        let col: Vec<&Option<u8>> = self.column(column_ref);
 
         // Is it safe to use unwrap here?
-        Ok(col.iter()
+        col.iter()
             .filter(|row| row.is_some())
             .map(|row| row.unwrap())
-            .collect())
+            .collect()
     }
 
     pub fn subgrid_values(&self, subgrid_id: usize) -> Result<Vec<u8>, InvalidSubGrid> {
@@ -143,21 +136,18 @@ impl Grid {
             .collect())
     }
 
-    pub fn subgrid_values_at(&self, row_id: usize, column_id: usize) -> Result<Vec<u8>, InvalidSubGrid> {
-        self.subgrid_values(Self::coordinates_to_subgrid(row_id, column_id))
+    pub fn subgrid_values_at(&self, grid_ref: &GridReference) -> Result<Vec<u8>, InvalidSubGrid> {
+        self.subgrid_values(Self::coordinates_to_subgrid(&grid_ref))
     }
 
-    pub fn set_cell(&mut self, row_id: usize, column_id: usize, value: u8) -> Result<&mut Self, Box<dyn Error>> {
-        let row_id = Self::validate_row_id(row_id)?;
-        let column_id = Self::validate_column_id(column_id)?;
+    pub fn set_cell(&mut self, grid_ref: &GridReference, value: u8) -> Result<&mut Self, Box<dyn Error>> {
         let value = Self::validate_cell_value(value)?;
-
-        let index = row_id * Self::GRID_COLUMNS + column_id;
+        let index = grid_ref.to_index();
         let old_value = self.grid_data[index].clone();
 
         self.grid_data[index] = Some(value);
 
-        let validated = self.validate_uniqueness(row_id, column_id);
+        let validated = self.validate_uniqueness(&grid_ref);
         if validated.is_err() {
             self.grid_data[index] = old_value;
             return Err(validated.unwrap_err().into());
@@ -166,41 +156,41 @@ impl Grid {
         Ok(self)
     }
 
-    pub fn clear_cell(&mut self, row_id: usize, column_id: usize) -> Result<&mut Self, Box<dyn Error>> {
-        let row_id = Self::validate_row_id(row_id)?;
-        let column_id = Self::validate_column_id(column_id)?;
-
-        self.grid_data[row_id * Self::GRID_COLUMNS + column_id] = None;
-        Ok(self)
+    pub fn clear_cell(&mut self, grid_ref: &GridReference) -> &mut Self {
+        self.grid_data[grid_ref.to_index()] = None;
+        self
     }
 
-    fn validate_uniqueness(&self, row_id: usize, column_id: usize) -> Result<(), Box<dyn Error>> {
-        if !self.row_is_unique(row_id)? {
+    fn validate_uniqueness(&self, grid_ref: &GridReference) -> Result<(), Box<dyn Error>> {
+        let row_ref = grid_ref.row_ref();
+        let column_ref = grid_ref.column_ref();
+
+        if !self.row_is_unique(&row_ref) {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
-                row_id,
-                column_id,
-                self.cell(row_id, column_id)?.unwrap(),
+                row_ref.row(),
+                column_ref.column(),
+                self.cell(&grid_ref).unwrap(),
                 UniquenessConstraint::Row,
             ).into());
         }
 
-        if !self.col_is_unique(column_id)? {
+        if !self.col_is_unique(&column_ref) {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
-                row_id,
-                column_id,
-                self.cell(row_id, column_id)?.unwrap(),
+                row_ref.row(),
+                column_ref.column(),
+                self.cell(&grid_ref).unwrap(),
                 UniquenessConstraint::Column,
             ).into());
         }
 
-        if !self.subgrid_is_unique_at(row_id, column_id)? {
+        if !self.subgrid_is_unique_at(grid_ref)? {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
-                row_id,
-                column_id,
-                self.cell(row_id, column_id)?.unwrap(),
+                row_ref.row(),
+                column_ref.column(),
+                self.cell(&grid_ref).unwrap(),
                 UniquenessConstraint::SubGrid,
             ).into());
         }
@@ -208,14 +198,14 @@ impl Grid {
         Ok(())
     }
 
-    fn row_is_unique(&self, row_id: usize) -> Result<bool, InvalidRow> {
-        let mut row_values = self.row_values(row_id)?;
-        Ok(Self::values_are_unique(&mut row_values))
+    fn row_is_unique(&self, row_ref: &RowReference) -> bool {
+        let mut row_values = self.row_values(row_ref);
+        Self::values_are_unique(&mut row_values)
     }
 
-    fn col_is_unique(&self, column_id: usize) -> Result<bool, InvalidColumn> {
-        let mut col_values = self.col_values(column_id)?;
-        Ok(Self::values_are_unique(&mut col_values))
+    fn col_is_unique(&self, column_ref: &ColumnReference) -> bool {
+        let mut col_values = self.col_values(&column_ref);
+        Self::values_are_unique(&mut col_values)
     }
 
     fn subgrid_is_unique(&self, subgrid_id: usize) -> Result<bool, InvalidSubGrid> {
@@ -223,8 +213,8 @@ impl Grid {
         Ok(Self::values_are_unique(&mut subgrid_values))
     }
 
-    fn subgrid_is_unique_at(&self, row_id: usize, column_id: usize) -> Result<bool, InvalidSubGrid> {
-        let mut subgrid_values = self.subgrid_values_at(row_id, column_id)?;
+    fn subgrid_is_unique_at(&self, grid_ref: &GridReference) -> Result<bool, InvalidSubGrid> {
+        let mut subgrid_values = self.subgrid_values_at(&grid_ref)?;
         Ok(Self::values_are_unique(&mut subgrid_values))
     }
 
@@ -240,22 +230,9 @@ impl Grid {
         true
     }
 
-    fn coordinates_to_subgrid(row_id: usize, column_id: usize) -> usize {
-        ((row_id / Self::SUBGRID_COLUMNS) * Self::SUBGRID_COLUMNS) + (column_id / Self::SUBGRID_ROWS)
-    }
-
-    fn validate_row_id(row_id: usize) -> Result<usize, InvalidRow> {
-        match row_id {
-            0..Self::GRID_COLUMNS => Ok(row_id),
-            _ => Err(InvalidRow::new(row_id)),
-        }
-    }
-
-    fn validate_column_id(column_id: usize) -> Result<usize, InvalidColumn> {
-        match column_id {
-            0..Self::GRID_ROWS => Ok(column_id),
-            _ => Err(InvalidColumn::new(column_id)),
-        }
+    fn coordinates_to_subgrid(grid_ref: &GridReference) -> usize {
+        ((grid_ref.row_ref().row() / Self::SUBGRID_COLUMNS) * Self::SUBGRID_COLUMNS)
+            + (grid_ref.column_ref().column() / Self::SUBGRID_ROWS)
     }
 
     fn validate_subgrid_id(subgrid_id: usize) -> Result<usize, InvalidSubGrid> {
@@ -280,7 +257,7 @@ impl Display for Grid {
         for row in 0..Self::GRID_COLUMNS {
             output.push_str("\t");
             for col in 0..Self::GRID_ROWS {
-                let raw_val = self.cell(row, col).map_err(|_| fmtError)?;
+                let raw_val = self.cell(&GridReference::from_numbers(row, col).map_err(|_| fmtError)?);
                 let cooked_val = match raw_val {
                     Some(val) => format!(" {}", val.to_string().white()),
                     None => format!("{}", String::from(" -").blue()),

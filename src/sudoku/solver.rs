@@ -1,6 +1,7 @@
 use std::error::Error;
-use crate::sudoku::grid::Grid;
+use crate::sudoku::grid::{Grid};
 use crate::sudoku::option_finder::OptionFinder;
+use crate::sudoku::reference::GridReference;
 
 #[derive(Debug)]
 pub struct Solver<'problem> {
@@ -40,19 +41,20 @@ impl<'problem> Solver<'problem> {
         } else if column_id > Grid::GRID_ROWS - 1 {
             // If we've passed the end of this row then move to the next one
             self.find_solution(solution, row_id + 1, 0)
-        } else if solution.cell(row_id, column_id)?.is_some() {
+        } else if solution.cell(&GridReference::from_numbers(row_id, column_id)?).is_some() {
             // If this cell already has a value, move on to the next one
             self.find_solution(solution, row_id, column_id + 1)
         } else {
             // Try each possible value in this cell then attempt to solve the rest of the puzzle
-            let options = OptionFinder::find_for_cell(solution, row_id, column_id)?;
+            let grid_ref = GridReference::from_numbers(row_id, column_id)?;
+            let options = OptionFinder::find_for_cell(solution, &grid_ref)?;
 
             for option in options {
-                if solution.set_cell(row_id, column_id, option).is_ok()
+                if solution.set_cell(&grid_ref, option).is_ok()
                     && self.find_solution(solution, row_id, column_id + 1)? {
                     return Ok(true)
                 } else {
-                    solution.clear_cell(row_id, column_id)?;
+                    solution.clear_cell(&grid_ref);
                 }
             }
 
