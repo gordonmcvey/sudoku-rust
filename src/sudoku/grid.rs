@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Display, Formatter, Result as FmtResult, Error as fmtError};
 use colored::Colorize;
 use crate::sudoku::error::{*};
 
@@ -280,8 +280,7 @@ impl Display for Grid {
         for row in 0..Self::GRID_COLUMNS {
             output.push_str("\t");
             for col in 0..Self::GRID_ROWS {
-                // @todo Handle result better
-                let raw_val = self.cell(row, col).unwrap();
+                let raw_val = self.cell(row, col).map_err(|_| fmtError)?;
                 let cooked_val = match raw_val {
                     Some(val) => format!(" {}", val.to_string().white()),
                     None => format!("{}", String::from(" -").blue()),

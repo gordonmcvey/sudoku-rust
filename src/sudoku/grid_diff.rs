@@ -1,4 +1,4 @@
-use std::fmt::{Display, Formatter, Result as FmtResult};
+use std::fmt::{Display, Formatter, Result as FmtResult, Error as fmtError};
 use colored::Colorize;
 use crate::sudoku::grid::Grid;
 
@@ -20,12 +20,10 @@ impl<'a> Display for GridDiff<'a> {
         for row in 0..Grid::GRID_COLUMNS {
             output.push_str("\t");
             for col in 0..Grid::GRID_ROWS {
-                // @todo Handle result better
-                let raw_val = self.current.cell(row, col).unwrap();
+                let raw_val = self.current.cell(row, col).map_err(|_| fmtError)?;
                 let cooked_val = match raw_val {
                     Some(val) => {
-                        // @todo Handle result better
-                        if self.base.cell(row, col).unwrap() != raw_val {
+                        if self.base.cell(row, col).map_err(|_| fmtError)? != raw_val {
                             format!(" {}", val.to_string().bright_green())
                         } else {
                             format!(" {}", val.to_string().white())
