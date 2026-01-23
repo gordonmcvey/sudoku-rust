@@ -1,4 +1,6 @@
 use std::error::Error;
+use std::fmt::{Display, Formatter, Result as FmtResult};
+use colored::Colorize;
 use crate::sudoku::error::{*};
 
 #[derive(Debug)]
@@ -268,5 +270,35 @@ impl Grid {
             Self::MIN_VALID_VAL..=Self::MAX_VALID_VAL => Ok(value),
             _ => Err(AnswerRangeError::new(value))
         }
+    }
+}
+
+impl Display for Grid {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        let mut output = String::with_capacity(2048);
+
+        for row in 0..Self::GRID_COLUMNS {
+            output.push_str("\t");
+            for col in 0..Self::GRID_ROWS {
+                // @todo Handle result better
+                let raw_val = self.cell(row, col).unwrap();
+                let cooked_val = match raw_val {
+                    Some(val) => format!(" {}", val.to_string().white()),
+                    None => format!("{}", String::from(" -").blue()),
+                };
+                output.push_str(cooked_val.as_str());
+
+                if 2 == col % 3 && col < 8 {
+                    output.push_str(format!("{}", String::from(" |").yellow()).as_str());
+                }
+            }
+
+            output.push('\n');
+            if 2 == row % 3 && row < 8 {
+                output.push_str(format!("{}", String::from("\t-------+-------+-------\n").yellow()).as_str());
+            }
+        }
+
+        write!(f, "{}", output)
     }
 }

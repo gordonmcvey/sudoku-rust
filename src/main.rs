@@ -87,8 +87,7 @@ fn main() {
         let grid = Grid::from_array(puzzles[selection - 1]).unwrap();
 
         println!();
-        print_grid(&grid, None);
-        println!();
+        println!("{}", &grid);
 
         let mut solver = Solver::new(&grid);
         let solution = solver.solve().get_solution();
