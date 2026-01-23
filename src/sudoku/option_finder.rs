@@ -1,13 +1,15 @@
 use std::error::Error;
 use crate::sudoku::grid::Grid;
 
+pub type OptionList = Vec<u8>;
+
 #[derive(Debug)]
 pub struct OptionFinder<> {
 }
 
 impl OptionFinder {
 
-    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+    pub fn find_for_cell(grid: &Grid, row_id: usize, column_id: usize) -> Result<OptionList, Box<dyn Error>> {
         // Early out: If this cell already has a value then it can't have any options
         if grid.cell(row_id, column_id)?.is_some() {
             return Ok(Vec::new());
