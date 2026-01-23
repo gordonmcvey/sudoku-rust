@@ -10,10 +10,10 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub const GRID_ROWS: usize = 9;
-    pub const GRID_COLUMNS: usize = 9;
-    const SUBGRID_ROWS: usize = 3;
-    const SUBGRID_COLUMNS: usize = 3;
+    pub(crate) const GRID_ROWS: usize = 9;
+    pub(crate) const GRID_COLUMNS: usize = 9;
+    pub(crate) const SUBGRID_ROWS: usize = 3;
+    pub(crate) const SUBGRID_COLUMNS: usize = 3;
     const SUBGRID_ID_LIMIT: usize = (Self::GRID_ROWS * Self::GRID_COLUMNS) / (Self::SUBGRID_ROWS * Self::SUBGRID_COLUMNS);
 
     pub(crate) const MIN_VALID_VAL: u8 = 1;
@@ -287,13 +287,13 @@ impl Display for Grid {
                 };
                 output.push_str(cooked_val.as_str());
 
-                if 2 == col % 3 && col < 8 {
+                if Self::SUBGRID_COLUMNS - 1 == col % Self::SUBGRID_COLUMNS && col < Self::GRID_COLUMNS - 1 {
                     output.push_str(format!("{}", String::from(" |").yellow()).as_str());
                 }
             }
 
             output.push('\n');
-            if 2 == row % 3 && row < 8 {
+            if Self::SUBGRID_ROWS - 1 == row % Self::SUBGRID_ROWS && row < Self::GRID_ROWS - 1 {
                 output.push_str(format!("{}", String::from("\t-------+-------+-------\n").yellow()).as_str());
             }
         }

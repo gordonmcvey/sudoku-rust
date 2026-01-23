@@ -33,13 +33,13 @@ impl<'a> Display for GridDiff<'a> {
                 };
                 output.push_str(cooked_val.as_str());
 
-                if 2 == col % 3 && col < 8 {
+                if Grid::SUBGRID_COLUMNS - 1 == col % Grid::SUBGRID_COLUMNS && col < Grid::GRID_COLUMNS - 1 {
                     output.push_str(format!("{}", String::from(" |").yellow()).as_str());
                 }
             }
 
             output.push('\n');
-            if 2 == row % 3 && row < 8 {
+            if Grid::SUBGRID_ROWS - 1 == row % Grid::SUBGRID_ROWS && row < Grid::GRID_ROWS - 1 {
                 output.push_str(format!("{}", String::from("\t-------+-------+-------\n").yellow()).as_str());
             }
         }
