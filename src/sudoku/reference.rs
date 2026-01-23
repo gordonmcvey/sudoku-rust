@@ -1,6 +1,6 @@
-use std::error::Error;
 use crate::sudoku::error::{InvalidColumn, InvalidRow, InvalidSubGrid};
 use crate::sudoku::grid::Grid;
+use std::error::Error;
 
 trait RowRefValidator {
     fn validate_row_id(row_id: usize) -> Result<usize, InvalidRow> {
@@ -16,6 +16,16 @@ trait ColumnRefValidator {
         match column_id {
             0..Grid::GRID_ROWS => Ok(column_id),
             _ => Err(InvalidColumn::new(column_id)),
+        }
+    }
+}
+
+trait SubgridRefValidator {
+
+    fn validate_subgrid_id(subgrid_id: usize) -> Result<usize, InvalidSubGrid> {
+        match subgrid_id {
+            0..SubgridReference::SUBGRID_ID_LIMIT => Ok(subgrid_id),
+            _ => Err(InvalidSubGrid::new(subgrid_id)),
         }
     }
 }
@@ -86,3 +96,32 @@ impl GridReference {
         self.row_ref.row * Grid::GRID_COLUMNS + self.column_ref.column
     }
 }
+
+#[derive(Debug)]
+pub struct SubgridReference {
+    subgrid: usize,
+}
+
+impl SubgridReference {
+    const SUBGRID_ID_LIMIT: usize = (Grid::GRID_ROWS * Grid::GRID_COLUMNS)
+        / (Grid::SUBGRID_ROWS * Grid::SUBGRID_COLUMNS);
+
+    pub fn new(subgrid: usize) -> Result<Self, InvalidSubGrid> {
+        let subgrid = Self::validate_subgrid_id(subgrid)?;
+        Ok(SubgridReference { subgrid })
+    }
+
+    pub fn from_grid_ref(grid_ref: &GridReference) -> SubgridReference {
+        let subgrid = ((grid_ref.row_ref().row() / Grid::SUBGRID_COLUMNS) * Grid::SUBGRID_COLUMNS)
+            + (grid_ref.column_ref().column() / Grid::SUBGRID_ROWS);
+
+        // As it's impossible to pass an invalid grid reference there's no need for further validation
+        Self { subgrid }
+    }
+
+    pub fn subgrid(&self) -> usize {
+        self.subgrid
+    }
+}
+
+impl SubgridRefValidator for SubgridReference {}

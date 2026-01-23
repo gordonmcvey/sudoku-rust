@@ -1,7 +1,7 @@
-use std::error::Error;
-use crate::sudoku::grid::{Grid};
+use crate::sudoku::grid::Grid;
 use crate::sudoku::option_finder::OptionFinder;
 use crate::sudoku::reference::GridReference;
+use std::error::Error;
 
 #[derive(Debug)]
 pub struct Solver<'problem> {
@@ -47,7 +47,7 @@ impl<'problem> Solver<'problem> {
         } else {
             // Try each possible value in this cell then attempt to solve the rest of the puzzle
             let grid_ref = GridReference::from_numbers(row_id, column_id)?;
-            let options = OptionFinder::find_for_cell(solution, &grid_ref)?;
+            let options = OptionFinder::find_for_cell(solution, &grid_ref);
 
             for option in options {
                 if solution.set_cell(&grid_ref, option).is_ok()

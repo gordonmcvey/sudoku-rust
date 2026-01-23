@@ -1,8 +1,8 @@
-use std::error::Error;
-use std::fmt::{Display, Formatter, Result as FmtResult, Error as fmtError};
+use crate::sudoku::error::*;
+use crate::sudoku::reference::*;
 use colored::Colorize;
-use crate::sudoku::error::{*};
-use crate::sudoku::reference::{*};
+use std::error::Error;
+use std::fmt::{Display, Error as fmtError, Formatter, Result as FmtResult};
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -15,7 +15,6 @@ impl Grid {
     pub(crate) const GRID_COLUMNS: usize = 9;
     pub(crate) const SUBGRID_ROWS: usize = 3;
     pub(crate) const SUBGRID_COLUMNS: usize = 3;
-    const SUBGRID_ID_LIMIT: usize = (Self::GRID_ROWS * Self::GRID_COLUMNS) / (Self::SUBGRID_ROWS * Self::SUBGRID_COLUMNS);
 
     pub(crate) const MIN_VALID_VAL: u8 = 1;
     pub(crate) const MAX_VALID_VAL: u8 = 9;
@@ -72,7 +71,7 @@ impl Grid {
 
     // @todo This is a pretty hacky POC and could use a refactor into something that handles
     // selecting the subslices more elegantly
-    pub fn subgrid(&self, subgrid_id: usize) -> Result<Vec<Option<u8>>, InvalidSubGrid> {
+    pub fn subgrid(&self, subgrid_ref: &SubgridReference) -> Vec<Option<u8>> {
         /*
          * As we're simulating the grid with a 1-dimensional array, a "subgrid" can be considered to
          * be 3 sub-slices of 3 elements each, comprising a total of the 9 elements that make up the
@@ -86,8 +85,7 @@ impl Grid {
          * [0, 1, 2, 9, 10, 11, 18, 19, 20], subgrid 4 would consist of the elements
          * [30, 31, 32, 39, 40, 41, 48, 49, 50], and so on)
          */
-        let subgrid_id = Self::validate_subgrid_id(subgrid_id)?;
-
+        let subgrid_id = subgrid_ref.subgrid();
         let subgrid_col = subgrid_id * Self::SUBGRID_ROWS % Self::GRID_ROWS;
         let subgrid_row = (
             (subgrid_id * Self::GRID_COLUMNS) / (Self::GRID_COLUMNS * Self::SUBGRID_COLUMNS)
@@ -99,11 +97,11 @@ impl Grid {
             subgrid.extend_from_slice(&self.grid_data[subgrid_index + (9 * row_start) .. subgrid_index + 3 + (9 * row_start)]);
         }
 
-        Ok(subgrid)
+        subgrid
     }
 
-    pub fn subgrid_at(&self, grid_ref: &GridReference) -> Result<Vec<Option<u8>>, InvalidSubGrid> {
-        self.subgrid(Self::coordinates_to_subgrid(&grid_ref))
+    pub fn subgrid_at(&self, grid_ref: &GridReference) -> Vec<Option<u8>> {
+        self.subgrid(&SubgridReference::from_grid_ref(grid_ref))
     }
 
     pub fn row_values(&self, row_ref: &RowReference) -> Vec<u8> {
@@ -126,18 +124,18 @@ impl Grid {
             .collect()
     }
 
-    pub fn subgrid_values(&self, subgrid_id: usize) -> Result<Vec<u8>, InvalidSubGrid> {
-        let subgrid: Vec<Option<u8>> = self.subgrid(subgrid_id)?;
+    pub fn subgrid_values(&self, subgrid_ref: &SubgridReference) -> Vec<u8> {
+        let subgrid: Vec<Option<u8>> = self.subgrid(&subgrid_ref);
 
         // Is it safe to use unwrap here?
-        Ok(subgrid.iter()
+        subgrid.iter()
             .filter(|row| row.is_some())
             .map(|row| row.unwrap())
-            .collect())
+            .collect()
     }
 
-    pub fn subgrid_values_at(&self, grid_ref: &GridReference) -> Result<Vec<u8>, InvalidSubGrid> {
-        self.subgrid_values(Self::coordinates_to_subgrid(&grid_ref))
+    pub fn subgrid_values_at(&self, grid_ref: &GridReference) -> Vec<u8> {
+        self.subgrid_values(&SubgridReference::from_grid_ref(&grid_ref))
     }
 
     pub fn set_cell(&mut self, grid_ref: &GridReference, value: u8) -> Result<&mut Self, Box<dyn Error>> {
@@ -185,7 +183,7 @@ impl Grid {
             ).into());
         }
 
-        if !self.subgrid_is_unique_at(grid_ref)? {
+        if !self.subgrid_is_unique_at(grid_ref) {
             // Is it safe to use unwrap() here?
             return Err(UniquenessError::new(
                 row_ref.row(),
@@ -208,14 +206,14 @@ impl Grid {
         Self::values_are_unique(&mut col_values)
     }
 
-    fn subgrid_is_unique(&self, subgrid_id: usize) -> Result<bool, InvalidSubGrid> {
-        let mut subgrid_values = self.subgrid_values(subgrid_id)?;
-        Ok(Self::values_are_unique(&mut subgrid_values))
+    fn subgrid_is_unique(&self, subgrid_ref: &SubgridReference) -> bool {
+        let mut subgrid_values = self.subgrid_values(&subgrid_ref);
+        Self::values_are_unique(&mut subgrid_values)
     }
 
-    fn subgrid_is_unique_at(&self, grid_ref: &GridReference) -> Result<bool, InvalidSubGrid> {
-        let mut subgrid_values = self.subgrid_values_at(&grid_ref)?;
-        Ok(Self::values_are_unique(&mut subgrid_values))
+    fn subgrid_is_unique_at(&self, grid_ref: &GridReference) -> bool {
+        let mut subgrid_values = self.subgrid_values_at(&grid_ref);
+        Self::values_are_unique(&mut subgrid_values)
     }
 
     fn values_are_unique(values: &mut [u8]) -> bool {
@@ -228,18 +226,6 @@ impl Grid {
         }
 
         true
-    }
-
-    fn coordinates_to_subgrid(grid_ref: &GridReference) -> usize {
-        ((grid_ref.row_ref().row() / Self::SUBGRID_COLUMNS) * Self::SUBGRID_COLUMNS)
-            + (grid_ref.column_ref().column() / Self::SUBGRID_ROWS)
-    }
-
-    fn validate_subgrid_id(subgrid_id: usize) -> Result<usize, InvalidSubGrid> {
-        match subgrid_id {
-            0..Self::SUBGRID_ID_LIMIT => Ok(subgrid_id),
-            _ => Err(InvalidSubGrid::new(subgrid_id)),
-        }
     }
 
     fn validate_cell_value(value: u8) -> Result<u8, AnswerRangeError> {
