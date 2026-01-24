@@ -30,7 +30,7 @@ trait SubgridRefValidator {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone)]
 pub struct RowReference {
     row: usize,
 }
@@ -48,7 +48,7 @@ impl RowReference {
 
 impl RowRefValidator for RowReference {}
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone)]
 pub struct ColumnReference {
     column: usize,
 }
@@ -66,7 +66,7 @@ impl ColumnReference {
 
 impl ColumnRefValidator for ColumnReference {}
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq, Clone)]
 pub struct GridReference {
     row_ref: RowReference,
     column_ref: ColumnReference,
