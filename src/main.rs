@@ -1,4 +1,5 @@
 use std::io;
+use sudoku_rust::sudoku::cached_option_finder::CachedOptionFinder;
 use sudoku_rust::sudoku::grid_diff::GridDiff;
 use sudoku_rust::sudoku::option_finder::StandardOptionFinder;
 use sudoku_rust::sudoku::{grid::Grid, solver::DepthFirstSolver};
@@ -90,7 +91,12 @@ fn main() {
         println!();
         println!("{}", &grid);
 
-        let mut solver = DepthFirstSolver::new(&grid, StandardOptionFinder::new(&grid));
+        let mut solver = DepthFirstSolver::new(
+            &grid,
+            CachedOptionFinder::new(
+                StandardOptionFinder::new(&grid)
+            ),
+        );
         let solution = solver.solve().get_solution();
 
         if let Some(solution) = solution {

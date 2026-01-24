@@ -1,17 +1,19 @@
+use crate::sudoku::cached_option_finder::CachedOptionFinder;
 use crate::sudoku::grid::{CellValue, Grid};
-use crate::sudoku::option_finder::{OptionFinder, StandardOptionFinder};
+use crate::sudoku::option_finder::*;
 use crate::sudoku::reference::GridReference;
 use std::error::Error;
 
 #[derive(Debug)]
 pub struct DepthFirstSolver<'problem> {
     problem: &'problem Grid,
-    option_finder: StandardOptionFinder<'problem>,
+    option_finder: CachedOptionFinder<'problem>,
     solution: Option<Grid>,
 }
 
 impl<'problem> DepthFirstSolver<'problem> {
-    pub fn new(problem: &'problem Grid, option_finder: StandardOptionFinder<'problem>) -> Self {
+    // @todo It should be possible to inject any implementation of the OptionFinder trait here
+    pub fn new(problem: &'problem Grid, option_finder: CachedOptionFinder<'problem>) -> Self {
         Self {
             problem,
             option_finder,
