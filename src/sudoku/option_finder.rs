@@ -3,18 +3,35 @@ use crate::sudoku::reference::GridReference;
 
 pub type OptionList = Vec<u8>;
 
+pub trait OptionFinder {
+    fn find_for_cell(&self, grid_ref: &GridReference) -> OptionList;
+}
+
 #[derive(Debug)]
-pub struct OptionFinder<'problem> {
+pub struct StandardOptionFinder<'problem> {
     problem: &'problem Grid,
 }
 
-impl<'problem> OptionFinder<'problem> {
-
-    pub fn new(problem: &'problem Grid) -> OptionFinder<'problem> {
+impl<'problem> StandardOptionFinder<'problem> {
+    pub fn new(problem: &'problem Grid) -> StandardOptionFinder<'problem> {
         Self { problem }
     }
 
-    pub fn find_for_cell(&self, grid_ref: &GridReference) -> OptionList {
+    fn build_used_list(&self, grid_ref: &GridReference) -> OptionList {
+        let mut used_values: OptionList = self.problem.row_values(&grid_ref.row_ref());
+
+        used_values.extend(self.problem.col_values(&grid_ref.column_ref()));
+        used_values.extend(self.problem.subgrid_values_at(&grid_ref));
+
+        used_values.sort();
+        used_values.dedup();
+
+        used_values
+    }
+}
+
+impl<'problem> OptionFinder for StandardOptionFinder<'problem> {
+    fn find_for_cell(&self, grid_ref: &GridReference) -> OptionList {
         // Early out: If this cell already has a value then it can't have any options
         if self.problem.cell(&grid_ref).is_some() {
             return Vec::new();
@@ -31,17 +48,5 @@ impl<'problem> OptionFinder<'problem> {
         }
 
         options
-    }
-
-    fn build_used_list(&self, grid_ref: &GridReference) -> OptionList {
-        let mut used_values: OptionList = self.problem.row_values(&grid_ref.row_ref());
-
-        used_values.extend(self.problem.col_values(&grid_ref.column_ref()));
-        used_values.extend(self.problem.subgrid_values_at(&grid_ref));
-
-        used_values.sort();
-        used_values.dedup();
-
-        used_values
     }
 }

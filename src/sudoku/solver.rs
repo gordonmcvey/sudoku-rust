@@ -1,17 +1,17 @@
 use crate::sudoku::grid::{CellValue, Grid};
-use crate::sudoku::option_finder::OptionFinder;
+use crate::sudoku::option_finder::{OptionFinder, StandardOptionFinder};
 use crate::sudoku::reference::GridReference;
 use std::error::Error;
 
 #[derive(Debug)]
 pub struct DepthFirstSolver<'problem> {
     problem: &'problem Grid,
-    option_finder: OptionFinder<'problem>,
+    option_finder: StandardOptionFinder<'problem>,
     solution: Option<Grid>,
 }
 
 impl<'problem> DepthFirstSolver<'problem> {
-    pub fn new(problem: &'problem Grid, option_finder: OptionFinder<'problem>) -> Self {
+    pub fn new(problem: &'problem Grid, option_finder: StandardOptionFinder<'problem>) -> Self {
         Self {
             problem,
             option_finder,

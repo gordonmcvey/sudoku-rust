@@ -1,6 +1,6 @@
 use std::io;
 use sudoku_rust::sudoku::grid_diff::GridDiff;
-use sudoku_rust::sudoku::option_finder::OptionFinder;
+use sudoku_rust::sudoku::option_finder::StandardOptionFinder;
 use sudoku_rust::sudoku::{grid::Grid, solver::DepthFirstSolver};
 
 fn main() {
@@ -90,7 +90,7 @@ fn main() {
         println!();
         println!("{}", &grid);
 
-        let mut solver = DepthFirstSolver::new(&grid, OptionFinder::new(&grid));
+        let mut solver = DepthFirstSolver::new(&grid, StandardOptionFinder::new(&grid));
         let solution = solver.solve().get_solution();
 
         if let Some(solution) = solution {
