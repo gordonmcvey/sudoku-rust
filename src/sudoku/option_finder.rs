@@ -14,7 +14,7 @@ impl<'problem> OptionFinder<'problem> {
         Self { problem }
     }
 
-    pub fn find_for_cell(&self, grid_ref: &GridReference) -> Vec<u8> {
+    pub fn find_for_cell(&self, grid_ref: &GridReference) -> OptionList {
         // Early out: If this cell already has a value then it can't have any options
         if self.problem.cell(&grid_ref).is_some() {
             return Vec::new();
@@ -33,8 +33,8 @@ impl<'problem> OptionFinder<'problem> {
         options
     }
 
-    fn build_used_list(&self, grid_ref: &GridReference) -> Vec<u8> {
-        let mut used_values: Vec<u8> = self.problem.row_values(&grid_ref.row_ref());
+    fn build_used_list(&self, grid_ref: &GridReference) -> OptionList {
+        let mut used_values: OptionList = self.problem.row_values(&grid_ref.row_ref());
 
         used_values.extend(self.problem.col_values(&grid_ref.column_ref()));
         used_values.extend(self.problem.subgrid_values_at(&grid_ref));
