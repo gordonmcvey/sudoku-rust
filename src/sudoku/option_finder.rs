@@ -1,5 +1,6 @@
 use crate::sudoku::grid::Grid;
 use crate::sudoku::reference::GridReference;
+use std::fmt::{Debug, Formatter};
 
 pub type OptionList = Vec<u8>;
 
@@ -48,5 +49,11 @@ impl<'problem> OptionFinder for StandardOptionFinder<'problem> {
         }
 
         options
+    }
+}
+
+impl Debug for dyn OptionFinder {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Option Finder (dynamic)")
     }
 }
