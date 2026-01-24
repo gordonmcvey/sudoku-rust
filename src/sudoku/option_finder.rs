@@ -5,7 +5,7 @@ use std::fmt::{Debug, Formatter};
 pub type OptionList = Vec<u8>;
 
 pub trait OptionFinder {
-    fn find_for_cell(&self, grid_ref: &GridReference) -> OptionList;
+    fn find_for_cell(&mut self, grid_ref: &GridReference) -> OptionList;
 }
 
 #[derive(Debug)]
@@ -32,7 +32,7 @@ impl<'problem> StandardOptionFinder<'problem> {
 }
 
 impl<'problem> OptionFinder for StandardOptionFinder<'problem> {
-    fn find_for_cell(&self, grid_ref: &GridReference) -> OptionList {
+    fn find_for_cell(&mut self, grid_ref: &GridReference) -> OptionList {
         // Early out: If this cell already has a value then it can't have any options
         if self.problem.cell(&grid_ref).is_some() {
             return Vec::new();
