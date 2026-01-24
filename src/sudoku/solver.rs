@@ -6,13 +6,15 @@ use std::error::Error;
 #[derive(Debug)]
 pub struct DepthFirstSolver<'problem> {
     problem: &'problem Grid,
+    option_finder: OptionFinder<'problem>,
     solution: Option<Grid>,
 }
 
 impl<'problem> DepthFirstSolver<'problem> {
-    pub fn new(problem: &'problem Grid) -> Self {
+    pub fn new(problem: &'problem Grid, option_finder: OptionFinder<'problem>) -> Self {
         Self {
             problem,
+            option_finder,
             solution: None,
         }
     }
@@ -34,7 +36,7 @@ impl<'problem> DepthFirstSolver<'problem> {
         &self.solution
     }
 
-    fn find_solution(&self, solution: &mut Grid, row_id: usize, column_id: usize) -> Result<bool, Box<dyn Error>> {
+    fn find_solution(&mut self, solution: &mut Grid, row_id: usize, column_id: usize) -> Result<bool, Box<dyn Error>> {
         if row_id > Grid::GRID_COLUMNS - 1 {
             // If we've passed the end of the grid then we've succeeded in finding a solution
             Ok(true)
@@ -47,7 +49,7 @@ impl<'problem> DepthFirstSolver<'problem> {
         } else {
             // Try each possible value in this cell then attempt to solve the rest of the puzzle
             let grid_ref = GridReference::from_numbers(row_id, column_id)?;
-            let options = OptionFinder::find_for_cell(solution, &grid_ref);
+            let options = self.option_finder.find_for_cell(&grid_ref);
 
             for option in options {
                 if solution.set_cell(&grid_ref, &CellValue::new(option)?).is_ok()
