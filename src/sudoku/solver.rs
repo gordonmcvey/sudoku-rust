@@ -1,4 +1,4 @@
-use crate::sudoku::grid::Grid;
+use crate::sudoku::grid::{CellValue, Grid};
 use crate::sudoku::option_finder::OptionFinder;
 use crate::sudoku::reference::GridReference;
 use std::error::Error;
@@ -50,7 +50,7 @@ impl<'problem> Solver<'problem> {
             let options = OptionFinder::find_for_cell(solution, &grid_ref);
 
             for option in options {
-                if solution.set_cell(&grid_ref, option).is_ok()
+                if solution.set_cell(&grid_ref, &CellValue::new(option)?).is_ok()
                     && self.find_solution(solution, row_id, column_id + 1)? {
                     return Ok(true)
                 } else {

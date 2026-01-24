@@ -7,6 +7,7 @@ use std::fmt::{Display, Error as fmtError, Formatter, Result as FmtResult};
 #[derive(Debug)]
 #[derive(Clone)]
 pub struct Grid {
+    // @todo Use the CellValue struct instead of U8 once I'm a bit more familiar with moving/borrowing
     grid_data: Vec<Option<u8>>,
 }
 
@@ -15,9 +16,6 @@ impl Grid {
     pub(crate) const GRID_COLUMNS: usize = 9;
     pub(crate) const SUBGRID_ROWS: usize = 3;
     pub(crate) const SUBGRID_COLUMNS: usize = 3;
-
-    pub(crate) const MIN_VALID_VAL: u8 = 1;
-    pub(crate) const MAX_VALID_VAL: u8 = 9;
 
     pub fn new() -> Self {
         Self {
@@ -34,7 +32,10 @@ impl Grid {
                 val = array_grid[row][col];
                 if val.is_some() {
                     // Is it safe to use unwrap() here?
-                    this_grid.set_cell(&GridReference::from_numbers(row, col)?, val.unwrap())?;
+                    this_grid.set_cell(
+                        &GridReference::from_numbers(row, col)?,
+                        &CellValue::new(val.unwrap())?,
+                    )?;
                 }
             }
         }
@@ -138,8 +139,8 @@ impl Grid {
         self.subgrid_values(&SubgridReference::from_grid_ref(&grid_ref))
     }
 
-    pub fn set_cell(&mut self, grid_ref: &GridReference, value: u8) -> Result<&mut Self, Box<dyn Error>> {
-        let value = Self::validate_cell_value(value)?;
+    pub fn set_cell(&mut self, grid_ref: &GridReference, value: &CellValue) -> Result<&mut Self, Box<dyn Error>> {
+        let value = value.value();
         let index = grid_ref.to_index();
         let old_value = self.grid_data[index].clone();
 
@@ -227,13 +228,6 @@ impl Grid {
 
         true
     }
-
-    fn validate_cell_value(value: u8) -> Result<u8, AnswerRangeError> {
-        match value {
-            Self::MIN_VALID_VAL..=Self::MAX_VALID_VAL => Ok(value),
-            _ => Err(AnswerRangeError::new(value))
-        }
-    }
 }
 
 impl Display for Grid {
@@ -262,5 +256,31 @@ impl Display for Grid {
         }
 
         write!(f, "{}", output)
+    }
+}
+
+#[derive(Debug)]
+pub struct CellValue {
+    value: u8,
+}
+
+impl CellValue {
+    pub(crate) const MIN_VALID_VAL: u8 = 1;
+    pub(crate) const MAX_VALID_VAL: u8 = 9;
+
+    pub fn new(value: u8) -> Result<Self, AnswerRangeError> {
+        let value = Self::validate_cell_value(value)?;
+        Ok(Self { value })
+    }
+
+    pub fn value(&self) -> u8 {
+        self.value
+    }
+
+    fn validate_cell_value(value: u8) -> Result<u8, AnswerRangeError> {
+        match value {
+            Self::MIN_VALID_VAL..=Self::MAX_VALID_VAL => Ok(value),
+            _ => Err(AnswerRangeError::new(value))
+        }
     }
 }

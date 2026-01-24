@@ -1,6 +1,6 @@
+use crate::sudoku::grid::CellValue;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter, Result as FmtResult};
-use crate::sudoku::grid::Grid;
 
 #[derive(Debug)]
 pub enum UniquenessConstraint {
@@ -110,8 +110,8 @@ impl Display for AnswerRangeError {
             f,
             "Cell value of {} is out of bounds: must be between {} and {}",
             self.value,
-            Grid::MIN_VALID_VAL,
-            Grid::MAX_VALID_VAL,
+            CellValue::MIN_VALID_VAL,
+            CellValue::MAX_VALID_VAL,
         )
     }
 }
