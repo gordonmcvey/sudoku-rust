@@ -4,12 +4,12 @@ use crate::sudoku::reference::GridReference;
 use std::error::Error;
 
 #[derive(Debug)]
-pub struct Solver<'problem> {
+pub struct DepthFirstSolver<'problem> {
     problem: &'problem Grid,
     solution: Option<Grid>,
 }
 
-impl<'problem> Solver<'problem> {
+impl<'problem> DepthFirstSolver<'problem> {
     pub fn new(problem: &'problem Grid) -> Self {
         Self {
             problem,
