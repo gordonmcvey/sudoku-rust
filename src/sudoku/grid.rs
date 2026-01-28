@@ -233,9 +233,10 @@ impl Grid {
 impl Display for Grid {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         let mut output = String::with_capacity(2048);
+        output.push_str(format!("{}", String::from("\t┌───────┬───────┬───────┐\n").yellow()).as_str());
 
         for row in 0..Self::GRID_COLUMNS {
-            output.push_str("\t");
+            output.push_str(format!("\t{}", String::from("│").yellow()).as_str());
             for col in 0..Self::GRID_ROWS {
                 let raw_val = self.cell(&GridReference::from_numbers(row, col).map_err(|_| fmtError)?);
                 let cooked_val = match raw_val {
@@ -244,16 +245,17 @@ impl Display for Grid {
                 };
                 output.push_str(cooked_val.as_str());
 
-                if Self::SUBGRID_COLUMNS - 1 == col % Self::SUBGRID_COLUMNS && col < Self::GRID_COLUMNS - 1 {
-                    output.push_str(format!("{}", String::from(" |").yellow()).as_str());
+                if Self::SUBGRID_COLUMNS - 1 == col % Self::SUBGRID_COLUMNS {
+                    output.push_str(format!("{}", String::from(" │").yellow()).as_str());
                 }
             }
 
             output.push('\n');
-            if Self::SUBGRID_ROWS - 1 == row % Self::SUBGRID_ROWS && row < Self::GRID_ROWS - 1 {
-                output.push_str(format!("{}", String::from("\t-------+-------+-------\n").yellow()).as_str());
+            if Grid::SUBGRID_ROWS - 1 == row % Grid::SUBGRID_ROWS && row < Grid::GRID_ROWS - 1 {
+                output.push_str(format!("{}", String::from("\t├───────┼───────┼───────┤\n").yellow()).as_str());
             }
         }
+        output.push_str(format!("{}", String::from("\t└───────┴───────┴───────┘\n").yellow()).as_str());
 
         write!(f, "{}", output)
     }

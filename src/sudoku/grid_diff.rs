@@ -1,7 +1,7 @@
-use std::fmt::{Display, Formatter, Result as FmtResult, Error as fmtError};
-use colored::Colorize;
-use crate::sudoku::grid::{Grid};
+use crate::sudoku::grid::Grid;
 use crate::sudoku::reference::GridReference;
+use colored::Colorize;
+use std::fmt::{Display, Error as fmtError, Formatter, Result as FmtResult};
 
 pub struct GridDiff<'a> {
     base: &'a Grid,
@@ -17,9 +17,10 @@ impl<'a> GridDiff<'a> {
 impl<'a> Display for GridDiff<'a> {
     fn fmt(&self, f: &mut Formatter) -> FmtResult {
         let mut output = String::with_capacity(2048);
+        output.push_str(format!("{}", String::from("\t┌───────┬───────┬───────┐\n").yellow()).as_str());
 
         for row in 0..Grid::GRID_COLUMNS {
-            output.push_str("\t");
+            output.push_str(format!("\t{}", String::from("│").yellow()).as_str());
             for col in 0..Grid::GRID_ROWS {
                 let grid_ref = GridReference::from_numbers(row, col).map_err(|_| fmtError)?;
                 let raw_val = self.current.cell(&grid_ref);
@@ -36,16 +37,17 @@ impl<'a> Display for GridDiff<'a> {
                 };
                 output.push_str(cooked_val.as_str());
 
-                if Grid::SUBGRID_COLUMNS - 1 == col % Grid::SUBGRID_COLUMNS && col < Grid::GRID_COLUMNS - 1 {
-                    output.push_str(format!("{}", String::from(" |").yellow()).as_str());
+                if Grid::SUBGRID_COLUMNS - 1 == col % Grid::SUBGRID_COLUMNS {
+                    output.push_str(format!("{}", String::from(" │").yellow()).as_str());
                 }
             }
 
             output.push('\n');
             if Grid::SUBGRID_ROWS - 1 == row % Grid::SUBGRID_ROWS && row < Grid::GRID_ROWS - 1 {
-                output.push_str(format!("{}", String::from("\t-------+-------+-------\n").yellow()).as_str());
+                output.push_str(format!("{}", String::from("\t├───────┼───────┼───────┤\n").yellow()).as_str());
             }
         }
+        output.push_str(format!("{}", String::from("\t└───────┴───────┴───────┘\n").yellow()).as_str());
 
         write!(f, "{}", output)
     }
